@@ -1,5 +1,16 @@
   .text
   .globl main
 main:
-  li a0, -2147483648
+  li   ra, 6
+  xor  ra, ra, $0
+  seqz ra, ra
+
+  sub  gp, $0, ra
+
+  sub  tp, $0, gp
+
+  xor  tp, tp, $0
+  seqz tp, tp
+
+  mv   a0, tp
   ret

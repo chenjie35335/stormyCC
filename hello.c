@@ -1,4 +1,6 @@
 int main() {
      /*zhuzhu*/
-     return 0x80000000; //woshizhu
-     }
+    return !(- -!6); //woshizhu
+    //return 0;
+     
+}
