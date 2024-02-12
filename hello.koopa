@@ -1,16 +1,18 @@
   .text
   .globl main
 main:
-  li   ra, 6
-  xor  ra, ra, $0
-  seqz ra, ra
+  li   ra, 1
+  li   sp, 2
+  li   gp, 3
+  li   tp, 4
+  add  t0, gp, tp
 
-  sub  gp, $0, ra
+  mul  t1,sp,t0
 
-  sub  tp, $0, gp
+  li   t2, 5
+  div  s0,t1,t2
 
-  xor  tp, tp, $0
-  seqz tp, tp
+  add  s1, ra, s0
 
-  mv   a0, tp
+  mv   a0, s1
   ret

@@ -45,7 +45,7 @@ using namespace std;
 
 // 非终结符的类型定义
 %type <ast_val> FuncDef FuncType Block Stmt Exp PrimaryExp UnaryExp
-%type <ast_val> UnaryOp
+%type <ast_val> UnaryOp AddExp MulExp AddOp MulOp
 %type <int_val> Number
 
 %%
@@ -107,11 +107,50 @@ Stmt
   }
   ;
 
+//Exp
+//  : UnaryExp {
+//    auto ast      = new ExpAST();
+//    ast->UnaryExp = unique_ptr<BaseAST>($1);
+//    $$ = ast;
+//  }
+//  ;
 Exp
+  : AddExp {
+      auto ast    = new ExpAST();
+      ast->AddExp = unique_ptr<BaseAST>($1);
+      $$          = ast;
+  }
+  ;
+
+AddExp
+  : MulExp {
+    auto ast    = new AddExpAST();
+    ast->MulExp = unique_ptr<BaseAST>($1);
+    ast->type   = MULEXP;
+    $$          = ast;
+  } | AddExp AddOp MulExp {
+    auto ast    = new AddExpAST();
+    ast->AddExp = unique_ptr<BaseAST>($1);
+    ast->AddOp  = unique_ptr<BaseAST>($2);
+    ast->MulExp = unique_ptr<BaseAST>($3);
+    ast->type   = ADDMUL;
+    $$          = ast;
+  }
+  ;
+
+MulExp 
   : UnaryExp {
-    auto ast      = new ExpAST();
+    auto ast      = new MulExpAST();
     ast->UnaryExp = unique_ptr<BaseAST>($1);
-    $$ = ast;
+    ast->type     = MULEXPAST_UNA;
+    $$            = ast;
+  } | MulExp MulOp UnaryExp{
+    auto ast      = new MulExpAST();
+    ast->MulExp   = unique_ptr<BaseAST>($1);
+    ast->MulOp    = unique_ptr<BaseAST>($2);
+    ast->UnaryExp = unique_ptr<BaseAST>($3);
+    ast->type     = MULEXPAST_MUL;
+    $$            = ast;
   }
   ;
 
@@ -148,6 +187,7 @@ UnaryExp
     ast->UnaryExp   = unique_ptr<BaseAST>($2);
     $$ = ast;
   }
+  ;
 
 UnaryOp
   : '+' {
@@ -163,7 +203,38 @@ UnaryOp
     ast->op = '!';
     $$ = ast;
   }
+  ;
 
+AddOp
+  : '+' {
+    auto ast = new AddOpAST();
+    ast->op  = '+';
+    $$       = ast;
+  } | '-' {
+    auto ast = new AddOpAST();
+    ast->op  = '-';
+    $$       = ast;
+  }
+  ;
+
+MulOp
+  : '*' {
+    auto ast = new MulOpAST();
+    ast->op = '*';
+    $$      = ast;
+  } | '/' {
+    auto ast  = new MulOpAST();
+    ast->op   = '/';
+    $$        = ast;
+  } | '%' {
+    auto ast = new MulOpAST();
+    ast->op  = '%';
+    $$       = ast;
+  }
+  ;
+
+
+ 
 %%
 
 // 定义错误处理函数, 其中第二个参数是错误信息
