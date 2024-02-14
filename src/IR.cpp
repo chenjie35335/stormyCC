@@ -67,13 +67,13 @@ void Visit(const koopa_raw_binary_t &binary,string &sign) {
         sign = s1;
         break;
         case KOOPA_RBO_MUL :
-        cout << "  mul  " + sign + "," + s1 + ","+s2<<endl;
+        cout << "  mul  " + sign + ", " + s1 + ", "+s2<<endl;
         break;
         case KOOPA_RBO_DIV :
-        cout << "  div  " + sign + "," + s1 + ","+s2 << endl;
+        cout << "  div  " + sign + ", " + s1 + ", "+s2 << endl;
         break; 
          case KOOPA_RBO_MOD :
-        cout << "  rem  " + sign + "," + s1 + ","+s2 << endl;
+        cout << "  rem  " + sign + ", " + s1 + ", "+s2 << endl;
         break; 
         default:assert(false);
     }

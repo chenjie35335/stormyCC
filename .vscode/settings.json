@@ -58,5 +58,9 @@
   "C_Cpp_Runner.msvcSecureNoWarnings": false,
   "files.associations": {
     "iostream": "cpp"
-  }
+  },
+  "files.watcherExclude": {
+    "**/target": true
+  },
+  "digital-ide.welcome.show": false
 }

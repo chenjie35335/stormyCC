@@ -1,18 +1,5 @@
-  .text
-  .globl main
-main:
-  li   ra, 1
-  li   sp, 2
-  li   gp, 3
-  li   tp, 4
-  add  t0, gp, tp
-
-  mul  t1,sp,t0
-
-  li   t2, 5
-  div  s0,t1,t2
-
-  add  s1, ra, s0
-
-  mv   a0, s1
-  ret
+fun @main(): i32 {
+%entry:
+  %0 = lt 1, 2
+  ret %0
+}

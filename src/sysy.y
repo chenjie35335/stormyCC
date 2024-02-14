@@ -39,13 +39,14 @@ using namespace std;
 
 // lexer 返回的所有 token 种类的声明
 // 注意 IDENT 和 INT_CONST 会返回 token 的值, 分别对应 str_val 和 int_val
-%token INT RETURN ADD SUB NOT
+%token INT RETURN EQ LE GE NE AND OR
 %token <str_val> IDENT
 %token <int_val> INT_CONST
 
 // 非终结符的类型定义
 %type <ast_val> FuncDef FuncType Block Stmt Exp PrimaryExp UnaryExp
-%type <ast_val> UnaryOp AddExp MulExp AddOp MulOp
+%type <ast_val> UnaryOp AddExp MulExp AddOp MulOp LOrExp LAndExp
+%type <ast_val> EqExp EqOp RelExp RelOp
 %type <int_val> Number
 
 %%
@@ -107,18 +108,105 @@ Stmt
   }
   ;
 
-//Exp
-//  : UnaryExp {
-//    auto ast      = new ExpAST();
-//    ast->UnaryExp = unique_ptr<BaseAST>($1);
-//    $$ = ast;
-//  }
-//  ;
 Exp
-  : AddExp {
+  : LOrExp {
       auto ast    = new ExpAST();
-      ast->AddExp = unique_ptr<BaseAST>($1);
+      ast->LOrExp = unique_ptr<BaseAST>($1);
       $$          = ast;
+  }
+  ;
+
+LOrExp 
+  : LAndExp {
+      auto ast    = new LOrExpAST();
+      ast->LAndExp= unique_ptr<BaseAST>($1);
+      ast->type   = LOREXPAST_LAN;
+      $$          = ast;
+  } | LOrExp OR LAndExp {
+      auto ast    = new LOrExpAST();
+      ast->LOrExp = unique_ptr<BaseAST> ($1);
+      ast->LAndExp= unique_ptr<BaseAST> ($3);
+      ast->type   = LOREXPAST_LOR;
+      $$          = ast;
+  }
+  ;
+
+LAndExp
+  : EqExp {
+      auto ast    = new LAndExpAST();
+      ast->EqExp  = unique_ptr<BaseAST>($1);
+      ast->type   = LANDEXPAST_EQE;
+      $$          = ast;
+  } | LAndExp AND EqExp{
+      auto ast    = new LAndExpAST();
+      ast->EqExp  = unique_ptr<BaseAST>($3);
+      ast->LAndExp= unique_ptr<BaseAST>($1);
+      ast->type   = LANDEXPAST_LAN;
+      $$          = ast;
+  }
+  ;
+
+EqExp
+  : RelExp {
+      auto ast    = new EqExpAST();
+      ast->RelExp = unique_ptr<BaseAST>($1);
+      ast->type   = EQEXPAST_REL;
+      $$          = ast;
+  } | EqExp EqOp RelExp{
+      auto ast    = new EqExpAST();
+      ast->EqExp  = unique_ptr<BaseAST>($1);
+      ast->EqOp   = unique_ptr<BaseAST>($2);
+      ast->RelExp = unique_ptr<BaseAST>($3);
+      ast->type   = EQEXPAST_EQE;
+      $$          = ast;
+  }
+  ;
+
+EqOp
+  : EQ {
+      auto ast  = new EqOpAST();
+      ast->type = EQOPAST_EQ;
+      $$        = ast;
+  } | NE {
+      auto ast  = new EqOpAST();
+      ast->type = EQOPAST_NE;
+      $$        = ast;
+  }
+  ;
+
+RelExp
+  : AddExp{
+      auto ast    = new RelExpAST();
+      ast->AddExp = unique_ptr<BaseAST>($1);
+      ast->type   = RELEXPAST_ADD;
+      $$          = ast;    
+  } | RelExp RelOp AddExp{
+      auto ast    = new RelExpAST();
+      ast->AddExp  = unique_ptr<BaseAST>($3);
+      ast->RelOp   = unique_ptr<BaseAST>($2);
+      ast->RelExp = unique_ptr<BaseAST>($1);
+      ast->type   = RELEXPAST_REL;
+      $$          = ast;
+  }
+  ;
+
+RelOp 
+  : '<' {
+auto ast  = new RelOpAST();
+ast->type = RELOPAST_L;
+$$        = ast;
+  } | '>' {
+auto ast  = new RelOpAST();
+ast->type = RELOPAST_G;
+$$        = ast;
+  } | LE  {
+auto ast  = new RelOpAST();
+ast->type = RELOPAST_LE;
+$$        = ast;
+  } | GE  {
+auto ast  = new RelOpAST();
+ast->type = RELOPAST_GE;
+$$        = ast;
   }
   ;
 

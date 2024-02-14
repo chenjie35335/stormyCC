@@ -141,11 +141,14 @@ extern int yydebug;
   {
     INT = 258,
     RETURN = 259,
-    ADD = 260,
-    SUB = 261,
-    NOT = 262,
-    IDENT = 263,
-    INT_CONST = 264
+    EQ = 260,
+    LE = 261,
+    GE = 262,
+    NE = 263,
+    AND = 264,
+    OR = 265,
+    IDENT = 266,
+    INT_CONST = 267
   };
 #endif
 
@@ -159,7 +162,7 @@ union YYSTYPE
   int int_val;
   BaseAST *ast_val;
 
-#line 163 "/root/compiler/build/sysy.tab.cpp"
+#line 166 "/root/compiler/build/sysy.tab.cpp"
 
 };
 typedef union YYSTYPE YYSTYPE;
@@ -478,19 +481,19 @@ union yyalloc
 /* YYFINAL -- State number of the termination state.  */
 #define YYFINAL  5
 /* YYLAST -- Last index in YYTABLE.  */
-#define YYLAST   24
+#define YYLAST   35
 
 /* YYNTOKENS -- Number of terminals.  */
-#define YYNTOKENS  21
+#define YYNTOKENS  26
 /* YYNNTS -- Number of nonterminals.  */
-#define YYNNTS  15
+#define YYNNTS  21
 /* YYNRULES -- Number of rules.  */
-#define YYNRULES  24
+#define YYNRULES  38
 /* YYNSTATES -- Number of states.  */
-#define YYNSTATES  39
+#define YYNSTATES  57
 
 #define YYUNDEFTOK  2
-#define YYMAXUTOK   264
+#define YYMAXUTOK   267
 
 
 /* YYTRANSLATE(TOKEN-NUM) -- Symbol number corresponding to TOKEN-NUM
@@ -505,16 +508,16 @@ static const yytype_int8 yytranslate[] =
        0,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
-       2,     2,     2,    17,     2,     2,     2,    20,     2,     2,
-      10,    11,    18,    15,     2,    16,     2,    19,     2,     2,
-       2,     2,     2,     2,     2,     2,     2,     2,     2,    14,
+       2,     2,     2,    22,     2,     2,     2,    25,     2,     2,
+      13,    14,    23,    20,     2,    21,     2,    24,     2,     2,
+       2,     2,     2,     2,     2,     2,     2,     2,     2,    17,
+      18,     2,    19,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
-       2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
-       2,     2,     2,    12,     2,    13,     2,     2,     2,     2,
+       2,     2,     2,    15,     2,    16,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
@@ -528,16 +531,17 @@ static const yytype_int8 yytranslate[] =
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     1,     2,     3,     4,
-       5,     6,     7,     8,     9
+       5,     6,     7,     8,     9,    10,    11,    12
 };
 
 #if YYDEBUG
   /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
-static const yytype_uint8 yyrline[] =
+static const yytype_int16 yyrline[] =
 {
-       0,    59,    59,    77,    88,    95,   103,   118,   126,   131,
-     142,   147,   158,   164,   174,   180,   184,   193,   197,   201,
-     209,   213,   221,   225,   229
+       0,    60,    60,    78,    89,    96,   104,   112,   120,   125,
+     135,   140,   150,   155,   166,   170,   178,   183,   194,   198,
+     202,   206,   214,   219,   230,   235,   246,   252,   262,   268,
+     272,   281,   285,   289,   297,   301,   309,   313,   317
 };
 #endif
 
@@ -546,11 +550,12 @@ static const yytype_uint8 yyrline[] =
    First, the terminals, then, starting at YYNTOKENS, nonterminals.  */
 static const char *const yytname[] =
 {
-  "$end", "error", "$undefined", "INT", "RETURN", "ADD", "SUB", "NOT",
-  "IDENT", "INT_CONST", "'('", "')'", "'{'", "'}'", "';'", "'+'", "'-'",
-  "'!'", "'*'", "'/'", "'%'", "$accept", "CompUnit", "FuncDef", "FuncType",
-  "Block", "Stmt", "Exp", "AddExp", "MulExp", "PrimaryExp", "Number",
-  "UnaryExp", "UnaryOp", "AddOp", "MulOp", YY_NULLPTR
+  "$end", "error", "$undefined", "INT", "RETURN", "EQ", "LE", "GE", "NE",
+  "AND", "OR", "IDENT", "INT_CONST", "'('", "')'", "'{'", "'}'", "';'",
+  "'<'", "'>'", "'+'", "'-'", "'!'", "'*'", "'/'", "'%'", "$accept",
+  "CompUnit", "FuncDef", "FuncType", "Block", "Stmt", "Exp", "LOrExp",
+  "LAndExp", "EqExp", "EqOp", "RelExp", "RelOp", "AddExp", "MulExp",
+  "PrimaryExp", "Number", "UnaryExp", "UnaryOp", "AddOp", "MulOp", YY_NULLPTR
 };
 #endif
 
@@ -560,12 +565,12 @@ static const char *const yytname[] =
 static const yytype_int16 yytoknum[] =
 {
        0,   256,   257,   258,   259,   260,   261,   262,   263,   264,
-      40,    41,   123,   125,    59,    43,    45,    33,    42,    47,
-      37
+     265,   266,   267,    40,    41,   123,   125,    59,    60,    62,
+      43,    45,    33,    42,    47,    37
 };
 # endif
 
-#define YYPACT_NINF (-25)
+#define YYPACT_NINF (-29)
 
 #define yypact_value_is_default(Yyn) \
   ((Yyn) == YYPACT_NINF)
@@ -579,10 +584,12 @@ static const yytype_int16 yytoknum[] =
      STATE-NUM.  */
 static const yytype_int8 yypact[] =
 {
-       3,   -25,    13,   -25,     6,   -25,     5,     7,     4,    15,
-     -25,    -8,     8,   -25,    -8,   -25,   -25,   -25,     9,    -4,
-     -15,   -25,   -25,   -25,    -8,   -25,    11,   -25,   -25,   -25,
-      -8,   -25,   -25,   -25,    -8,   -25,   -25,   -15,   -25
+       4,   -29,    15,   -29,     8,   -29,     9,     7,    10,    19,
+     -29,    -4,    11,   -29,    -4,   -29,   -29,   -29,    12,    14,
+      17,    -2,    -5,   -16,   -13,   -29,   -29,   -29,    -4,   -29,
+      16,   -29,    -4,    -4,   -29,   -29,    -4,   -29,   -29,   -29,
+     -29,    -4,   -29,   -29,    -4,   -29,   -29,   -29,    -4,   -29,
+     -29,    17,    -2,    -5,   -16,   -13,   -29
 };
 
   /* YYDEFACT[STATE-NUM] -- Default reduction number in state STATE-NUM.
@@ -591,23 +598,27 @@ static const yytype_int8 yypact[] =
 static const yytype_int8 yydefact[] =
 {
        0,     4,     0,     2,     0,     1,     0,     0,     0,     0,
-       3,     0,     0,    14,     0,    17,    18,    19,     0,     7,
-       8,    15,    13,    10,     0,     5,     0,     6,    20,    21,
-       0,    22,    23,    24,     0,    16,    12,     9,    11
+       3,     0,     0,    28,     0,    31,    32,    33,     0,     7,
+       8,    10,    12,    16,    22,    29,    27,    24,     0,     5,
+       0,     6,     0,     0,    14,    15,     0,    20,    21,    18,
+      19,     0,    34,    35,     0,    36,    37,    38,     0,    30,
+      26,     9,    11,    13,    17,    23,    25
 };
 
   /* YYPGOTO[NTERM-NUM].  */
 static const yytype_int8 yypgoto[] =
 {
-     -25,   -25,   -25,   -25,   -25,   -25,    10,   -25,   -13,   -25,
-     -25,   -24,   -25,   -25,   -25
+     -29,   -29,   -29,   -29,   -29,   -29,    18,   -29,    -1,     0,
+     -29,    -8,   -29,    -7,    -9,   -29,   -29,   -28,   -29,   -29,
+     -29
 };
 
   /* YYDEFGOTO[NTERM-NUM].  */
 static const yytype_int8 yydefgoto[] =
 {
       -1,     2,     3,     4,    10,    12,    18,    19,    20,    21,
-      22,    23,    24,    30,    34
+      36,    22,    41,    23,    24,    25,    26,    27,    28,    44,
+      48
 };
 
   /* YYTABLE[YYPACT[STATE-NUM]] -- What to do in state STATE-NUM.  If
@@ -615,42 +626,48 @@ static const yytype_int8 yydefgoto[] =
      number is the opposite.  If YYTABLE_NINF, syntax error.  */
 static const yytype_int8 yytable[] =
 {
-      35,    13,    14,    31,    32,    33,     1,    15,    16,    17,
-      38,    28,    29,     5,     6,     7,     9,    37,     8,    11,
-       0,    25,    36,    27,    26
+      49,    37,    38,    34,    42,    43,    35,     1,    13,    14,
+      45,    46,    47,    39,    40,     5,    15,    16,    17,     6,
+      56,     8,     7,    11,    32,     9,    33,    29,    53,    31,
+      50,    51,    30,    52,    54,    55
 };
 
 static const yytype_int8 yycheck[] =
 {
-      24,     9,    10,    18,    19,    20,     3,    15,    16,    17,
-      34,    15,    16,     0,     8,    10,    12,    30,    11,     4,
-      -1,    13,    11,    14,    14
+      28,     6,     7,     5,    20,    21,     8,     3,    12,    13,
+      23,    24,    25,    18,    19,     0,    20,    21,    22,    11,
+      48,    14,    13,     4,    10,    15,     9,    16,    36,    17,
+      14,    32,    14,    33,    41,    44
 };
 
   /* YYSTOS[STATE-NUM] -- The (internal number of the) accessing
      symbol of state STATE-NUM.  */
 static const yytype_int8 yystos[] =
 {
-       0,     3,    22,    23,    24,     0,     8,    10,    11,    12,
-      25,     4,    26,     9,    10,    15,    16,    17,    27,    28,
-      29,    30,    31,    32,    33,    13,    27,    14,    15,    16,
-      34,    18,    19,    20,    35,    32,    11,    29,    32
+       0,     3,    27,    28,    29,     0,    11,    13,    14,    15,
+      30,     4,    31,    12,    13,    20,    21,    22,    32,    33,
+      34,    35,    37,    39,    40,    41,    42,    43,    44,    16,
+      32,    17,    10,     9,     5,     8,    36,     6,     7,    18,
+      19,    38,    20,    21,    45,    23,    24,    25,    46,    43,
+      14,    34,    35,    37,    39,    40,    43
 };
 
   /* YYR1[YYN] -- Symbol number of symbol that rule YYN derives.  */
 static const yytype_int8 yyr1[] =
 {
-       0,    21,    22,    23,    24,    25,    26,    27,    28,    28,
-      29,    29,    30,    30,    31,    32,    32,    33,    33,    33,
-      34,    34,    35,    35,    35
+       0,    26,    27,    28,    29,    30,    31,    32,    33,    33,
+      34,    34,    35,    35,    36,    36,    37,    37,    38,    38,
+      38,    38,    39,    39,    40,    40,    41,    41,    42,    43,
+      43,    44,    44,    44,    45,    45,    46,    46,    46
 };
 
   /* YYR2[YYN] -- Number of symbols on the right hand side of rule YYN.  */
 static const yytype_int8 yyr2[] =
 {
        0,     2,     1,     5,     1,     3,     3,     1,     1,     3,
-       1,     3,     3,     1,     1,     1,     2,     1,     1,     1,
-       1,     1,     1,     1,     1
+       1,     3,     1,     3,     1,     1,     1,     3,     1,     1,
+       1,     1,     1,     3,     1,     3,     3,     1,     1,     1,
+       2,     1,     1,     1,     1,     1,     1,     1,     1
 };
 
 
@@ -1348,17 +1365,17 @@ yyreduce:
   switch (yyn)
     {
   case 2:
-#line 59 "/root/compiler/src/sysy.y"
+#line 60 "/root/compiler/src/sysy.y"
             {
     auto comp_unit = make_unique<CompUnitAST>();
     comp_unit->func_def = unique_ptr<BaseAST>((yyvsp[0].ast_val));
     ast = move(comp_unit);
   }
-#line 1358 "/root/compiler/build/sysy.tab.cpp"
+#line 1375 "/root/compiler/build/sysy.tab.cpp"
     break;
 
   case 3:
-#line 77 "/root/compiler/src/sysy.y"
+#line 78 "/root/compiler/src/sysy.y"
                                  {
     auto ast = new FuncDefAST();
     ast->func_type = unique_ptr<BaseAST>((yyvsp[-4].ast_val));
@@ -1366,61 +1383,215 @@ yyreduce:
     ast->block = unique_ptr<BaseAST>((yyvsp[0].ast_val));
     (yyval.ast_val) = ast;
   }
-#line 1370 "/root/compiler/build/sysy.tab.cpp"
+#line 1387 "/root/compiler/build/sysy.tab.cpp"
     break;
 
   case 4:
-#line 88 "/root/compiler/src/sysy.y"
+#line 89 "/root/compiler/src/sysy.y"
         {
     auto ast = new FuncTypeAST();
     (yyval.ast_val) = ast;
   }
-#line 1379 "/root/compiler/build/sysy.tab.cpp"
+#line 1396 "/root/compiler/build/sysy.tab.cpp"
     break;
 
   case 5:
-#line 95 "/root/compiler/src/sysy.y"
+#line 96 "/root/compiler/src/sysy.y"
                  {
     auto ast = new BlockAST();
     ast->stmt = unique_ptr<BaseAST>((yyvsp[-1].ast_val));
     (yyval.ast_val) = ast;
   }
-#line 1389 "/root/compiler/build/sysy.tab.cpp"
+#line 1406 "/root/compiler/build/sysy.tab.cpp"
     break;
 
   case 6:
-#line 103 "/root/compiler/src/sysy.y"
+#line 104 "/root/compiler/src/sysy.y"
                    {
     auto ast = new StmtAST();
     ast->Exp = unique_ptr<BaseAST>((yyvsp[-1].ast_val));
     (yyval.ast_val) = ast;
   }
-#line 1399 "/root/compiler/build/sysy.tab.cpp"
+#line 1416 "/root/compiler/build/sysy.tab.cpp"
     break;
 
   case 7:
-#line 118 "/root/compiler/src/sysy.y"
+#line 112 "/root/compiler/src/sysy.y"
            {
       auto ast    = new ExpAST();
-      ast->AddExp = unique_ptr<BaseAST>((yyvsp[0].ast_val));
+      ast->LOrExp = unique_ptr<BaseAST>((yyvsp[0].ast_val));
       (yyval.ast_val)          = ast;
   }
-#line 1409 "/root/compiler/build/sysy.tab.cpp"
+#line 1426 "/root/compiler/build/sysy.tab.cpp"
     break;
 
   case 8:
-#line 126 "/root/compiler/src/sysy.y"
+#line 120 "/root/compiler/src/sysy.y"
+            {
+      auto ast    = new LOrExpAST();
+      ast->LAndExp= unique_ptr<BaseAST>((yyvsp[0].ast_val));
+      ast->type   = LOREXPAST_LAN;
+      (yyval.ast_val)          = ast;
+  }
+#line 1437 "/root/compiler/build/sysy.tab.cpp"
+    break;
+
+  case 9:
+#line 125 "/root/compiler/src/sysy.y"
+                        {
+      auto ast    = new LOrExpAST();
+      ast->LOrExp = unique_ptr<BaseAST> ((yyvsp[-2].ast_val));
+      ast->LAndExp= unique_ptr<BaseAST> ((yyvsp[0].ast_val));
+      ast->type   = LOREXPAST_LOR;
+      (yyval.ast_val)          = ast;
+  }
+#line 1449 "/root/compiler/build/sysy.tab.cpp"
+    break;
+
+  case 10:
+#line 135 "/root/compiler/src/sysy.y"
+          {
+      auto ast    = new LAndExpAST();
+      ast->EqExp  = unique_ptr<BaseAST>((yyvsp[0].ast_val));
+      ast->type   = LANDEXPAST_EQE;
+      (yyval.ast_val)          = ast;
+  }
+#line 1460 "/root/compiler/build/sysy.tab.cpp"
+    break;
+
+  case 11:
+#line 140 "/root/compiler/src/sysy.y"
+                       {
+      auto ast    = new LAndExpAST();
+      ast->EqExp  = unique_ptr<BaseAST>((yyvsp[0].ast_val));
+      ast->LAndExp= unique_ptr<BaseAST>((yyvsp[-2].ast_val));
+      ast->type   = LANDEXPAST_LAN;
+      (yyval.ast_val)          = ast;
+  }
+#line 1472 "/root/compiler/build/sysy.tab.cpp"
+    break;
+
+  case 12:
+#line 150 "/root/compiler/src/sysy.y"
+           {
+      auto ast    = new EqExpAST();
+      ast->RelExp = unique_ptr<BaseAST>((yyvsp[0].ast_val));
+      ast->type   = EQEXPAST_REL;
+      (yyval.ast_val)          = ast;
+  }
+#line 1483 "/root/compiler/build/sysy.tab.cpp"
+    break;
+
+  case 13:
+#line 155 "/root/compiler/src/sysy.y"
+                       {
+      auto ast    = new EqExpAST();
+      ast->EqExp  = unique_ptr<BaseAST>((yyvsp[-2].ast_val));
+      ast->EqOp   = unique_ptr<BaseAST>((yyvsp[-1].ast_val));
+      ast->RelExp = unique_ptr<BaseAST>((yyvsp[0].ast_val));
+      ast->type   = EQEXPAST_EQE;
+      (yyval.ast_val)          = ast;
+  }
+#line 1496 "/root/compiler/build/sysy.tab.cpp"
+    break;
+
+  case 14:
+#line 166 "/root/compiler/src/sysy.y"
+       {
+      auto ast  = new EqOpAST();
+      ast->type = EQOPAST_EQ;
+      (yyval.ast_val)        = ast;
+  }
+#line 1506 "/root/compiler/build/sysy.tab.cpp"
+    break;
+
+  case 15:
+#line 170 "/root/compiler/src/sysy.y"
+         {
+      auto ast  = new EqOpAST();
+      ast->type = EQOPAST_NE;
+      (yyval.ast_val)        = ast;
+  }
+#line 1516 "/root/compiler/build/sysy.tab.cpp"
+    break;
+
+  case 16:
+#line 178 "/root/compiler/src/sysy.y"
+          {
+      auto ast    = new RelExpAST();
+      ast->AddExp = unique_ptr<BaseAST>((yyvsp[0].ast_val));
+      ast->type   = RELEXPAST_ADD;
+      (yyval.ast_val)          = ast;    
+  }
+#line 1527 "/root/compiler/build/sysy.tab.cpp"
+    break;
+
+  case 17:
+#line 183 "/root/compiler/src/sysy.y"
+                         {
+      auto ast    = new RelExpAST();
+      ast->AddExp  = unique_ptr<BaseAST>((yyvsp[0].ast_val));
+      ast->RelOp   = unique_ptr<BaseAST>((yyvsp[-1].ast_val));
+      ast->RelExp = unique_ptr<BaseAST>((yyvsp[-2].ast_val));
+      ast->type   = RELEXPAST_REL;
+      (yyval.ast_val)          = ast;
+  }
+#line 1540 "/root/compiler/build/sysy.tab.cpp"
+    break;
+
+  case 18:
+#line 194 "/root/compiler/src/sysy.y"
+        {
+auto ast  = new RelOpAST();
+ast->type = RELOPAST_L;
+(yyval.ast_val)        = ast;
+  }
+#line 1550 "/root/compiler/build/sysy.tab.cpp"
+    break;
+
+  case 19:
+#line 198 "/root/compiler/src/sysy.y"
+          {
+auto ast  = new RelOpAST();
+ast->type = RELOPAST_G;
+(yyval.ast_val)        = ast;
+  }
+#line 1560 "/root/compiler/build/sysy.tab.cpp"
+    break;
+
+  case 20:
+#line 202 "/root/compiler/src/sysy.y"
+          {
+auto ast  = new RelOpAST();
+ast->type = RELOPAST_LE;
+(yyval.ast_val)        = ast;
+  }
+#line 1570 "/root/compiler/build/sysy.tab.cpp"
+    break;
+
+  case 21:
+#line 206 "/root/compiler/src/sysy.y"
+          {
+auto ast  = new RelOpAST();
+ast->type = RELOPAST_GE;
+(yyval.ast_val)        = ast;
+  }
+#line 1580 "/root/compiler/build/sysy.tab.cpp"
+    break;
+
+  case 22:
+#line 214 "/root/compiler/src/sysy.y"
            {
     auto ast    = new AddExpAST();
     ast->MulExp = unique_ptr<BaseAST>((yyvsp[0].ast_val));
     ast->type   = MULEXP;
     (yyval.ast_val)          = ast;
   }
-#line 1420 "/root/compiler/build/sysy.tab.cpp"
+#line 1591 "/root/compiler/build/sysy.tab.cpp"
     break;
 
-  case 9:
-#line 131 "/root/compiler/src/sysy.y"
+  case 23:
+#line 219 "/root/compiler/src/sysy.y"
                           {
     auto ast    = new AddExpAST();
     ast->AddExp = unique_ptr<BaseAST>((yyvsp[-2].ast_val));
@@ -1429,22 +1600,22 @@ yyreduce:
     ast->type   = ADDMUL;
     (yyval.ast_val)          = ast;
   }
-#line 1433 "/root/compiler/build/sysy.tab.cpp"
+#line 1604 "/root/compiler/build/sysy.tab.cpp"
     break;
 
-  case 10:
-#line 142 "/root/compiler/src/sysy.y"
+  case 24:
+#line 230 "/root/compiler/src/sysy.y"
              {
     auto ast      = new MulExpAST();
     ast->UnaryExp = unique_ptr<BaseAST>((yyvsp[0].ast_val));
     ast->type     = MULEXPAST_UNA;
     (yyval.ast_val)            = ast;
   }
-#line 1444 "/root/compiler/build/sysy.tab.cpp"
+#line 1615 "/root/compiler/build/sysy.tab.cpp"
     break;
 
-  case 11:
-#line 147 "/root/compiler/src/sysy.y"
+  case 25:
+#line 235 "/root/compiler/src/sysy.y"
                            {
     auto ast      = new MulExpAST();
     ast->MulExp   = unique_ptr<BaseAST>((yyvsp[-2].ast_val));
@@ -1453,11 +1624,11 @@ yyreduce:
     ast->type     = MULEXPAST_MUL;
     (yyval.ast_val)            = ast;
   }
-#line 1457 "/root/compiler/build/sysy.tab.cpp"
+#line 1628 "/root/compiler/build/sysy.tab.cpp"
     break;
 
-  case 12:
-#line 158 "/root/compiler/src/sysy.y"
+  case 26:
+#line 246 "/root/compiler/src/sysy.y"
                 {
     auto ast  = new PrimaryExpAST();
     ast->kind = UNARYEXP;
@@ -1465,11 +1636,11 @@ yyreduce:
     ast->number = 0;
     (yyval.ast_val) = ast;
   }
-#line 1469 "/root/compiler/build/sysy.tab.cpp"
+#line 1640 "/root/compiler/build/sysy.tab.cpp"
     break;
 
-  case 13:
-#line 164 "/root/compiler/src/sysy.y"
+  case 27:
+#line 252 "/root/compiler/src/sysy.y"
              {
     auto ast  = new PrimaryExpAST();
     ast->kind = NUMBER;
@@ -1477,120 +1648,120 @@ yyreduce:
     ast->Exp = nullptr;
     (yyval.ast_val) = ast;
   }
-#line 1481 "/root/compiler/build/sysy.tab.cpp"
+#line 1652 "/root/compiler/build/sysy.tab.cpp"
     break;
 
-  case 14:
-#line 174 "/root/compiler/src/sysy.y"
+  case 28:
+#line 262 "/root/compiler/src/sysy.y"
               {
     (yyval.int_val) = (yyvsp[0].int_val);
   }
-#line 1489 "/root/compiler/build/sysy.tab.cpp"
+#line 1660 "/root/compiler/build/sysy.tab.cpp"
     break;
 
-  case 15:
-#line 180 "/root/compiler/src/sysy.y"
+  case 29:
+#line 268 "/root/compiler/src/sysy.y"
                {
     auto ast        = new UnaryExpAST_P();
     ast->PrimaryExp = unique_ptr<BaseAST> ((yyvsp[0].ast_val));
     (yyval.ast_val) = ast; 
   }
-#line 1499 "/root/compiler/build/sysy.tab.cpp"
+#line 1670 "/root/compiler/build/sysy.tab.cpp"
     break;
 
-  case 16:
-#line 184 "/root/compiler/src/sysy.y"
+  case 30:
+#line 272 "/root/compiler/src/sysy.y"
                        {
     auto ast        = new UnaryExpAST_U();
     ast->UnaryOp    = unique_ptr<BaseAST>((yyvsp[-1].ast_val));
     ast->UnaryExp   = unique_ptr<BaseAST>((yyvsp[0].ast_val));
     (yyval.ast_val) = ast;
   }
-#line 1510 "/root/compiler/build/sysy.tab.cpp"
+#line 1681 "/root/compiler/build/sysy.tab.cpp"
     break;
 
-  case 17:
-#line 193 "/root/compiler/src/sysy.y"
+  case 31:
+#line 281 "/root/compiler/src/sysy.y"
         {
     auto ast = new UnaryOpAST();
     ast->op = '+';
     (yyval.ast_val) = ast;
   }
-#line 1520 "/root/compiler/build/sysy.tab.cpp"
+#line 1691 "/root/compiler/build/sysy.tab.cpp"
     break;
 
-  case 18:
-#line 197 "/root/compiler/src/sysy.y"
+  case 32:
+#line 285 "/root/compiler/src/sysy.y"
           {
     auto ast = new UnaryOpAST();
     ast->op = '-';
     (yyval.ast_val) = ast;
   }
-#line 1530 "/root/compiler/build/sysy.tab.cpp"
+#line 1701 "/root/compiler/build/sysy.tab.cpp"
     break;
 
-  case 19:
-#line 201 "/root/compiler/src/sysy.y"
+  case 33:
+#line 289 "/root/compiler/src/sysy.y"
           {
     auto ast = new UnaryOpAST();
     ast->op = '!';
     (yyval.ast_val) = ast;
   }
-#line 1540 "/root/compiler/build/sysy.tab.cpp"
+#line 1711 "/root/compiler/build/sysy.tab.cpp"
     break;
 
-  case 20:
-#line 209 "/root/compiler/src/sysy.y"
+  case 34:
+#line 297 "/root/compiler/src/sysy.y"
         {
     auto ast = new AddOpAST();
     ast->op  = '+';
     (yyval.ast_val)       = ast;
   }
-#line 1550 "/root/compiler/build/sysy.tab.cpp"
+#line 1721 "/root/compiler/build/sysy.tab.cpp"
     break;
 
-  case 21:
-#line 213 "/root/compiler/src/sysy.y"
+  case 35:
+#line 301 "/root/compiler/src/sysy.y"
           {
     auto ast = new AddOpAST();
     ast->op  = '-';
     (yyval.ast_val)       = ast;
   }
-#line 1560 "/root/compiler/build/sysy.tab.cpp"
+#line 1731 "/root/compiler/build/sysy.tab.cpp"
     break;
 
-  case 22:
-#line 221 "/root/compiler/src/sysy.y"
+  case 36:
+#line 309 "/root/compiler/src/sysy.y"
         {
     auto ast = new MulOpAST();
     ast->op = '*';
     (yyval.ast_val)      = ast;
   }
-#line 1570 "/root/compiler/build/sysy.tab.cpp"
+#line 1741 "/root/compiler/build/sysy.tab.cpp"
     break;
 
-  case 23:
-#line 225 "/root/compiler/src/sysy.y"
+  case 37:
+#line 313 "/root/compiler/src/sysy.y"
           {
     auto ast  = new MulOpAST();
     ast->op   = '/';
     (yyval.ast_val)        = ast;
   }
-#line 1580 "/root/compiler/build/sysy.tab.cpp"
+#line 1751 "/root/compiler/build/sysy.tab.cpp"
     break;
 
-  case 24:
-#line 229 "/root/compiler/src/sysy.y"
+  case 38:
+#line 317 "/root/compiler/src/sysy.y"
           {
     auto ast = new MulOpAST();
     ast->op  = '%';
     (yyval.ast_val)       = ast;
   }
-#line 1590 "/root/compiler/build/sysy.tab.cpp"
+#line 1761 "/root/compiler/build/sysy.tab.cpp"
     break;
 
 
-#line 1594 "/root/compiler/build/sysy.tab.cpp"
+#line 1765 "/root/compiler/build/sysy.tab.cpp"
 
       default: break;
     }
@@ -1822,7 +1993,7 @@ yyreturn:
 #endif
   return yyresult;
 }
-#line 238 "/root/compiler/src/sysy.y"
+#line 326 "/root/compiler/src/sysy.y"
 
 
 // 定义错误处理函数, 其中第二个参数是错误信息

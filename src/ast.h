@@ -12,20 +12,43 @@ using namespace std;
   2. 对于分类的名称，为了方便，除PrimaryExp外，需要改动
   3. 取用每种匹配方式的前三个字符的大写作为分类方式
 */
+// enum{
+    // UNARYEXP,
+    // NUMBER
+// }PrimaryExpAST_Kind;
+// 
+// enum{
+    // MULEXP,
+    // ADDMUL
+// }AddExpAST_Kind;
+// 
+// enum{
+    // MULEXPAST_UNA,
+    // MULEXPAST_MUL
+// }MulExpAST_Kind;
+// 
 enum{
-    UNARYEXP,
-    NUMBER
-}PrimaryExpAST_Kind;
-
-enum{
-    MULEXP,
-    ADDMUL
-}AddExpAST_Kind;
-
-enum{
-    MULEXPAST_UNA,
-    MULEXPAST_MUL
-}MulExpAST_Kind;
+  UNARYEXP,
+  NUMBER,
+  MULEXP,
+  ADDMUL,
+  MULEXPAST_UNA,
+  MULEXPAST_MUL,
+  LOREXPAST_LAN,
+  LOREXPAST_LOR,
+  LANDEXPAST_EQE,
+  LANDEXPAST_LAN,
+  EQEXPAST_REL,
+  EQEXPAST_EQE,
+  EQOPAST_EQ,
+  EQOPAST_NE,
+  RELEXPAST_ADD,
+  RELEXPAST_REL,
+  RELOPAST_L,
+  RELOPAST_G,
+  RELOPAST_LE,
+  RELOPAST_GE
+}Kind;
 
 static int alloc_now = -1;
 class BaseAST {
@@ -102,14 +125,189 @@ class StmtAST : public BaseAST {
 //这里就是返回值的问题，但是这里考虑可以把返回值设为string,直接将常数改为string返回就可以了
 class ExpAST : public BaseAST {
   public:
-    std::unique_ptr<BaseAST> AddExp;
+    std::unique_ptr<BaseAST> LOrExp;
     void Dump() const override {}
     void Dump(string &sign) const override{
      // cout << "enter Exp" << endl;
-        AddExp->Dump(sign);
+        LOrExp->Dump(sign);
     }
     void Dump(string &sign1,string &sign2,string &sign) const override{}
 };
+
+class LOrExpAST : public BaseAST {
+  public:
+   std::unique_ptr<BaseAST> LAndExp;
+   std::unique_ptr<BaseAST> LOrExp;
+   uint32_t type;
+   void Dump() const override{}
+   void Dump(string &sign) const override{
+        string sign1 = "";
+        string sign2 = "";
+        switch(type) {
+          case LOREXPAST_LAN:
+            LAndExp->Dump(sign);break;
+          case LOREXPAST_LOR:
+            {
+              LOrExp->Dump(sign1);
+              LAndExp->Dump(sign2);
+              Dump(sign1,sign2,sign);
+              break;
+            }
+        }
+   }
+   void Dump(string &sign1,string &sign2,string &sign)const override{
+        alloc_now++;
+        sign = "%"+to_string(alloc_now);
+        cout << "  "+sign << " = " << "or " << sign1 << ", " << sign2 << endl;
+        alloc_now++;
+        cout << "  %"+to_string(alloc_now) << " = " << "ne " << sign  << ", " << 0 << endl;
+        sign = "%"+to_string(alloc_now);
+   }
+}
+;
+
+class LAndExpAST : public BaseAST {
+  public:
+   std::unique_ptr<BaseAST> EqExp;
+   std::unique_ptr<BaseAST> LAndExp;
+   uint32_t type;
+   void Dump() const override{}
+   void Dump(string &sign) const override{
+    string s1 = "",s2 = "";
+    switch(type) {
+      case LANDEXPAST_EQE:
+          EqExp->Dump(sign);break;
+      case LANDEXPAST_LAN:
+          {
+            LAndExp->Dump(s1);
+            EqExp->Dump(s2);
+            Dump(s1,s2,sign);
+            break;
+          }
+      default: 
+          assert(0);
+    }
+
+   }
+   void Dump(string &sign1,string &sign2,string &sign)const override{
+    alloc_now++;
+    cout << "  %"+to_string(alloc_now) << " = " << "ne " << sign1 << ", " << 0 << endl;
+    sign1 = "%"+to_string(alloc_now);
+    alloc_now++;
+    cout << "  %"+to_string(alloc_now) << " = " << "ne " << sign2 << ", " << 0 << endl;
+    sign2 = "%"+to_string(alloc_now);
+    alloc_now++;
+    cout << "  %"+to_string(alloc_now) << " = " << "and " << sign1 << ", " << sign2 << endl;
+    sign = "%"+to_string(alloc_now);
+   }
+}
+;
+
+class EqExpAST : public BaseAST {
+  public:
+   std::unique_ptr<BaseAST> EqExp;
+   std::unique_ptr<BaseAST> RelExp;
+   std::unique_ptr<BaseAST> EqOp;
+   uint32_t type;
+   void Dump() const override{}
+   void Dump(string &sign) const override{
+     string s1 = "",s2 = "";
+     switch(type) {
+        case EQEXPAST_REL: {
+          RelExp->Dump(sign);break;
+        }
+        case EQEXPAST_EQE: {
+          EqExp->Dump(s1);
+          RelExp->Dump(s2);
+          EqOp->Dump(s1,s2,sign);
+          break;
+        }
+        default:
+          assert(0);
+     }
+   }
+   void Dump(string &sign1,string &sign2,string &sign)const override{
+
+   }
+}
+;
+
+class EqOpAST : public BaseAST {
+  public:
+    uint32_t type;
+    void Dump() const override{}
+    void Dump(string &sign) const override{}
+    void Dump(string &sign1,string &sign2,string &sign)const override{
+        alloc_now++;
+        switch(type) {
+          case EQOPAST_EQ :
+            cout << "  %" << (alloc_now) << ' '<< '=' << ' ' << "eq " << sign1 << ", " << sign2 << endl;
+            break;
+          case EQOPAST_NE :
+            cout << "  %" << (alloc_now) << ' '<< '=' << ' ' << "ne " << sign1 << ", " << sign2 << endl;
+            break; 
+          default:
+            assert(0);
+          }
+        sign = "%"+to_string(alloc_now);
+    }
+} 
+;
+
+class RelExpAST : public BaseAST {
+  public:
+   std::unique_ptr<BaseAST> AddExp;
+   std::unique_ptr<BaseAST> RelExp;
+   std::unique_ptr<BaseAST> RelOp;
+   uint32_t type;
+   void Dump() const override{}
+   void Dump(string &sign) const override{
+      string s1 = "",s2 = "";
+      switch(type) {
+      case RELEXPAST_ADD: {
+        AddExp->Dump(sign);break;
+      }
+      case RELEXPAST_REL: {
+        RelExp->Dump(s1);
+        AddExp->Dump(s2);
+        RelOp->Dump(s1,s2,sign);
+        break;
+      }
+      default:
+        assert(0);
+      }
+   }
+   void Dump(string &sign1,string &sign2,string &sign)const override{}
+}
+;
+
+class RelOpAST : public BaseAST {
+  public:
+    uint32_t type;
+    void Dump() const override{}
+    void Dump(string &sign) const override{}
+    void Dump(string &sign1,string &sign2,string &sign)const override{
+        alloc_now++;
+        switch(type) {
+          case RELOPAST_GE :
+            cout << "  %" << (alloc_now) << ' '<< '=' << ' ' << "ge " << sign1 << ", " << sign2 << endl;
+            break;
+          case RELOPAST_LE :
+            cout << "  %" << (alloc_now) << ' '<< '=' << ' ' << "le " << sign1 << ", " << sign2 << endl;
+            break; 
+          case RELOPAST_L :
+            cout << "  %" << (alloc_now) << ' '<< '=' << ' ' << "lt " << sign1 << ", " << sign2 << endl;
+            break; 
+          case RELOPAST_G :
+            cout << "  %" << (alloc_now) << ' '<< '=' << ' ' << "gt " << sign1 << ", " << sign2 << endl;
+            break;
+          default:
+            assert(0);
+        }
+        sign = "%"+to_string(alloc_now);
+    }
+} 
+;
 
 class AddExpAST : public BaseAST {
   public:
@@ -165,6 +363,7 @@ class MulExpAST : public BaseAST {
 
 class UnaryExpAST_P : public BaseAST {
   public:
+  //UnaryExp第一种情况
     std::unique_ptr<BaseAST> PrimaryExp;
     void Dump() const override {}
     void Dump(string &sign) const override{
@@ -175,6 +374,7 @@ class UnaryExpAST_P : public BaseAST {
 
 class UnaryExpAST_U : public BaseAST {
   public:
+  //UnaryExp的递归第二种情况
     std::unique_ptr<BaseAST> UnaryOp;
     std::unique_ptr<BaseAST> UnaryExp;
     void Dump() const override{}
@@ -207,6 +407,7 @@ class UnaryOpAST : public BaseAST {
     char op;
     void Dump() const override {}
     void Dump(string &sign) const override {
+      //在运算符处生成中间表示的语句
       //if(sign.at(0) == '%') {
         alloc_now++;
       //}
