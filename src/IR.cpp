@@ -66,15 +66,46 @@ void Visit(const koopa_raw_binary_t &binary,string &sign) {
         cout << "  seqz " +s1+", "+ s1  <<endl;
         sign = s1;
         break;
+        case KOOPA_RBO_NOT_EQ : 
+//printf("parsing eq\n");
+        cout << "  xor  " +s1+", "+ s1 + ", " +s2 <<endl;
+        cout << "  snez " +s1+", "+ s1  <<endl;
+        sign = s1;
+        break;
         case KOOPA_RBO_MUL :
         cout << "  mul  " + sign + ", " + s1 + ", "+s2<<endl;
         break;
         case KOOPA_RBO_DIV :
         cout << "  div  " + sign + ", " + s1 + ", "+s2 << endl;
         break; 
-         case KOOPA_RBO_MOD :
+        case KOOPA_RBO_MOD :
         cout << "  rem  " + sign + ", " + s1 + ", "+s2 << endl;
         break; 
+        case KOOPA_RBO_LT :
+        cout << "  slt  " + s1 + ", " + s1 + ", "+s2 << endl;
+        sign = s1; break;
+        case KOOPA_RBO_GT :
+        cout << "  slt  " + s1 + ", " + s2 + ", "+s1 << endl;
+        sign = s1; break;
+        case KOOPA_RBO_GE:
+        cout << "  slt  " + s1 + ", " + s1 + ", "+s2 << endl;
+        cout << "  seqz " + s1 + ", " + s1  <<endl;
+        sign = s1;      
+        break;
+        case KOOPA_RBO_LE:
+        cout << "  sgt  " + s1 + ", " + s1 + ", "+s2 << endl;
+        cout << "  seqz " + s1 + ", " + s1  <<endl;
+        sign = s1;      
+        break;
+        case KOOPA_RBO_OR:
+        cout << "  or  " + sign + ", " + s1 + ", "+s2 << endl;
+        break;
+        case KOOPA_RBO_XOR:
+        cout << "  xor  " + sign + ", " + s1 + ", "+s2 << endl;
+        break;
+        case KOOPA_RBO_AND:
+        cout << "  and  " + sign + ", " + s1 + ", "+s2 << endl;
+        break;
         default:assert(false);
     }
     cout << endl;

@@ -109,6 +109,8 @@ test:
 	make
 	build/compiler $(TARGET) hello.c -o hello.koopa
 
+autotest:
+	autotest -koopa -s lv3 /root/compiler
 
 
 -include $(DEPS)
