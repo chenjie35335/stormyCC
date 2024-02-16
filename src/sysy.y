@@ -39,7 +39,7 @@ using namespace std;
 
 // lexer 返回的所有 token 种类的声明
 // 注意 IDENT 和 INT_CONST 会返回 token 的值, 分别对应 str_val 和 int_val
-%token INT RETURN EQ LE GE NE AND OR
+%token INT RETURN EQ LE GE NE AND OR CONST
 %token <str_val> IDENT
 %token <int_val> INT_CONST
 
@@ -92,10 +92,93 @@ FuncType
   }
   ;
 
+Decl
+  : ConstDecl {
+    auto ast       = new DeclAST();
+    ast->ConstDecl = unique_ptr<BaseAST>($1);
+    $$             = ast;
+  }
+  ;
+
+ConstDecl
+  : CONST Btype MulConstDef ';'{
+    auto ast        = new ConstDeclAST();
+    ast->Btype      = unique_ptr<BaseAST>($2);
+    ast->MulConstDef= unique_ptr<BaseAST>($3);
+    $$              = ast;
+  }
+  ;
+//这里使用的是一个递归的方法，但是我们发现这个方法如果实际采用的话，可能会导致树的极度不平衡
+//所以说助教说的Vec的方法应当想办法弄出来
+//但是貌似也可以使用这种递归的方式，只是存储的时候就把SinConstDef存在一起就可以了
+//也就是说MulConstDef不进行重新分配而是复用即可
+MulConstDef
+  : SinConstDef {
+      auto ast = MulConstDefAST();
+      ast->SinConstDef.push_back($1);
+      $$       = ast;
+  } | MulConstDef ',' SinConstDef{
+      auto ast = unique_ptr<MulConstDefAST>($1);
+      ast->SinConstDef.push_back($2);
+      $$       = ast;
+  }
+  ;
+//这个在语义分析阶段就用来写入常量表，而不输出任何汇编代码
+SinConstDef
+  : IDENT '=' ConstExp {
+      auto ast      = new SinConstDefAST();
+      ast->ident    = *unique_ptr<string>($1);
+      ast->ConstExp = unique_ptr<BaseAST>($2);
+      $$            = ast;
+  }
+  ;
+
+ConstExp 
+  : Exp {
+     auto ast = new ConstExpASt();
+     ast->Exp = unique_ptr<BaseAST>($1);
+     $$       = ast;
+  }
+  ;
+
+Btype
+  : INT {
+    auto ast = new BtypeAST();
+    ast->type = "int";
+    $$        = ast;
+  }
+  ;
+
 Block
-  : '{' Stmt '}' {
+  : '{' MulBlockItem '}' {
     auto ast = new BlockAST();
     ast->stmt = unique_ptr<BaseAST>($2);
+    $$ = ast;
+  }
+  ;
+//这里使用递归的方式来描述多个，但是依旧使用vector来表示
+MulBlockItem
+  : SinBlockItem {
+    auto ast = new MulBlockItemAST();
+    ast->SinBlockItem.push_back($1);
+    $$       = ast;
+  } | MulBlockItem SinBlockItem{
+    auto ast = unique_ptr<MulBlockItemAST>($1);
+    ast->SinBlockItem.push_back($2);
+    $$       = ast;
+  }
+  ;
+
+SinBlockItem 
+  : Decl {
+    auto ast = new SinBlockItemAST();
+    ast->decl= unique_ptr<BaseAST>($1);
+    ast->type= SINBLOCKITEM_DEC;
+    $$ = ast;
+  } | Stmt {
+    auto ast = new SinBlockItemAST();
+    ast->stmt= unique_ptr<BaseAST>($1);
+    ast->type= SINBLOCKITEM_STM;
     $$ = ast;
   }
   ;
@@ -107,7 +190,7 @@ Stmt
     $$ = ast;
   }
   ;
-
+          
 Exp
   : LOrExp {
       auto ast    = new ExpAST();
@@ -242,6 +325,13 @@ MulExp
   }
   ;
 
+LVal 
+  : IDENT {
+
+  }
+  ;
+
+
 PrimaryExp
   : '(' Exp ')' {
     auto ast  = new PrimaryExpAST();
@@ -249,6 +339,8 @@ PrimaryExp
     ast->Exp  = unique_ptr<BaseAST>($2);
     ast->number = 0;
     $$ = ast;
+  } | LVal {
+
   } | Number {
     auto ast  = new PrimaryExpAST();
     ast->kind = NUMBER;

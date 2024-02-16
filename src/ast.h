@@ -2,6 +2,8 @@
 #include <memory>
 #include <string>
 #include <cassert>
+#include <unordered_map>
+#include <vector>
 using namespace std;
 #pragma once
 // 所有 AST 的基类
@@ -47,7 +49,9 @@ enum{
   RELOPAST_L,
   RELOPAST_G,
   RELOPAST_LE,
-  RELOPAST_GE
+  RELOPAST_GE,
+  SINBLOCKITEM_DEC,
+  SINBLOCKITEM_STM
 }Kind;
 
 static int alloc_now = -1;
@@ -97,15 +101,87 @@ class FuncTypeAST : public BaseAST {
     void Dump(string &sign1,string &sign2,string &sign) const override{}
 };
 
+class DeclAST : public BaseAST {
+  public:
+    std::unique_ptr<BaseAST> ConstDecl;
+    void Dump() const override {
+      ConstDecl->Dump();
+    }
+    void Dump(string &sign) const override {
+      ConstDecl->Dump(sign);
+    }
+    void Dump(string &sign1,string &sign2,string &sign) const override{}
+};
+
+class ConstDeclAST : public BaseAST {
+  public:
+    std::unique_ptr<BaseAST> Btype;
+    std::unique_ptr<BaseAST> MulConstDef;
+    void Dump() const override {
+      
+    }
+    void Dump(string &sign) const override {
+      
+    }
+    void Dump(string &sign1,string &sign2,string &sign) const override{}
+};
+
+class MulConstDefAST : public BaseAST {
+  public:
+    vector <BaseAST> SinConstDef;
+    void Dump() const override{
+
+    }
+    void Dump(string &sign) const override {
+
+    }
+    void Dump(string &sign1,string &sign2,string &sign) const override{}
+};
+
+class SinConstDefAST : public BaseAST{
+  public:
+    string ident;
+    unique_ptr<BaseAST>ConstExp;
+    void Dump() const override{}
+    void Dump(string &sign) const override {} 
+    void Dump(string &sign1,string &sign2,string &sign) const override{}
+};
+
+class ConstExpAST : public BaseAST {
+  public:
+    unique_ptr<BaseAST>Exp;
+    void Dump() const override{}
+    void Dump(string &sign) const override {} 
+    void Dump(string &sign1,string &sign2,string &sign) const override{}
+};
+
 class BlockAST : public BaseAST {
  public:
-    std::unique_ptr<BaseAST> stmt;
+    std::unique_ptr<BaseAST> MulBlockItem;
     void Dump() const override {
       cout << "{" << endl;
-      stmt->Dump();
+      MulBlockItem->Dump();
       cout << "}" << endl;
 }
     void Dump(string &sign) const override {}
+    void Dump(string &sign1,string &sign2,string &sign) const override{}
+};
+
+class MulBlockItemAST : public BaseAST {
+  public:
+    vector<BaseAST> SinBlockItem;
+    void Dump() const override{}
+    void Dump(string &sign) const override {} 
+    void Dump(string &sign1,string &sign2,string &sign) const override{}
+};
+
+class SinBlockItemAST : public BaseAST {
+  public:
+    unique_ptr<BaseAST> decl;
+    unique_ptr<BaseAST> stmt;
+    uint32_t type;
+    void Dump() const override{}
+    void Dump(string &sign) const override {} 
     void Dump(string &sign1,string &sign2,string &sign) const override{}
 };
 

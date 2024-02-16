@@ -53,3 +53,43 @@ virtual函数是个虚函数，必须重写，default表示默认调用编译器
 
 * const: 这个关键字表明这个函数是一个常量成员函数，即它不能修改对象的任何数据成员。
 * = 0: 这表示这是一个纯虚函数。纯虚函数是一种特殊类型的虚函数，在基类中声明但不提供实现（即没有函数体）。派生类必须提供该函数的实现，除非派生类也是抽象类。
+
+C++中有一种向量类型，这里给出方法
+```C++
+#include <vector>
+std::vector<int> myVector;
+myVector.push_back(1);
+myVector.push_back(2);
+myVector.push_back(3);
+int firstElement = myVector[0]; // firstElement 现在是 1
+int secondElement = myVector.at(1); // secondElement 现在是 2
+int size = myVector.size(); // size 现在是 3
+myVector.pop_back(); // myVector 现在只包含元素 1 和 2
+myVector.clear(); // myVector 现在是空的
+```
+以上是一些vector的用法
+
+同时这里也需要添加一种键指对的方法。
+unordered_map是C++标准库中的一个容器，它存储键值对，其中每个键都是唯一的。这个容器提供了快速的查找、添加和删除操作。
+
+在内部，unordered_map使用哈希表来实现。因此，它的元素并不按照任何特定的顺序排列，而是根据其键的哈希值进行组织。这就是为什么它被称为"无序"映射。
+
+下面是一个简单的unordered_map使用示例：
+
+```cpp
+
+#include <iostream>
+#include <unordered_map>
+
+int main() {
+    std::unordered_map<std::string, int> ages;
+    ages["Alice"] = 20;
+    ages["Bob"] = 21;
+
+    std::cout << "Alice is " << ages["Alice"] << " years old." << std::endl;
+    std::cout << "Bob is " << ages["Bob"] << " years old." << std::endl;
+
+    return 0;
+}
+```
+在这个例子中，我们创建了一个unordered_map，其中键是字符串（人名），值是整数（年龄）。然后，我们可以通过键直接访问和修改对应的值。
