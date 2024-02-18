@@ -671,7 +671,10 @@ class LValAST : public BaseAST {
       string ident;
       int value;
       void Dump() const override {}
-      void Dump(string &sign) const override {}
+      void Dump(string &sign) const override {
+          int CalValue = ValueTable.at(ident);
+          sign = to_string(CalValue);
+      }
       void Dump(string &sign1,string &sign2,string &sign3) const override{}
       [[nodiscard]] int calc() const override{
           int CalValue = ValueTable.at(ident);
