@@ -20,6 +20,8 @@ enum{
   NUMBER,
   MULEXP,
   ADDMUL,
+  DECLAST_CON,
+  DECLAST_VAR,
   MULEXPAST_UNA,
   MULEXPAST_MUL,
   LOREXPAST_LAN,
@@ -37,7 +39,9 @@ enum{
   RELOPAST_LE,
   RELOPAST_GE,
   SINBLOCKITEM_DEC,
-  SINBLOCKITEM_STM
+  SINBLOCKITEM_STM,
+  SINVARDEFAST_UIN,
+  SINVARDEFAST_INI
 }Kind;
 extern unordered_map<string,int> ValueTable;
 static int alloc_now = -1;
@@ -94,8 +98,14 @@ class FuncTypeAST : public BaseAST {
 class DeclAST : public BaseAST {
   public:
     std::unique_ptr<BaseAST> ConstDecl;
+    std::unique_ptr<BaseAST> VarDecl;
+    uint32_t type;
     void Dump() const override {
-      ConstDecl->Dump();
+        switch(type) {
+            case DECLAST_CON: ConstDecl->Dump(); break;
+            case DECLAST_VAR: VarDecl->Dump(); break;
+            default: assert(0);
+        }
     }
     void Dump(string &sign) const override {
       
@@ -126,7 +136,7 @@ class BtypeAST : public BaseAST {
     void Dump(string &sign,string  &sign1,string &sign2) const override{}
     [[nodiscard]] int calc() const override{return 0;}
 };
-
+//这里使用mulConstDef递归嵌套的方式实现多个，而且使用vector存储可以提高树的平衡性
 class MulConstDefAST : public BaseAST {
   public:
     vector <unique_ptr<BaseAST>> SinConstDef;
@@ -156,6 +166,44 @@ class SinConstDefAST : public BaseAST{
     void Dump(string &sign) const override {} 
     void Dump(string &sign1,string &sign2,string &sign) const override{}
     [[nodiscard]] int calc() const override{return 0;}
+};
+
+class VarDeclAST : public BaseAST {
+public:
+     unique_ptr <BaseAST> MulVarDef;
+     void Dump() const override{}
+     void Dump(string & sign) const override {}
+     void Dump(string &sign1, string &sign2,string &sign){}
+     [[nodiscard]] int calc() const override {return 0;}
+};
+
+class MulVarDefAST : public BaseAST {
+public:
+    vector <unique_ptr<BaseAST>> SinValDef;
+    void Dump() const override{}
+    void Dump(string & sign) const override {}
+    void Dump(string &sign1, string &sign2,string &sign){}
+    [[nodiscard]] int calc() const override {return 0;}
+};
+
+class SinVarDefAST : public BaseAST {
+public:
+    string ident;
+    unique_ptr<BaseAST>InitVal;
+    uint32_t type;
+    void Dump() const override{}
+    void Dump(string & sign) const override {}
+    void Dump(string &sign1, string &sign2,string &sign){}
+    [[nodiscard]] int calc() const override {return 0;}
+};
+
+class InitValAST : public BaseAST {
+public:
+    unique_ptr<BaseAST>Exp;
+    void Dump() const override{}
+    void Dump(string & sign) const override {}
+    void Dump(string & sign1, string & sign2,string & sign){}
+    [[nodiscard]] int calc() const override {return 0;}
 };
 
 class ConstExpAST : public BaseAST {
@@ -224,7 +272,7 @@ class StmtAST : public BaseAST {
     }
     void Dump(string &sign) const override{}
     void Dump(string &sign1,string &sign2,string &sign) const override{}
-    int calc() const override{return 0;}
+    [[nodiscard]] int calc() const override{return 0;}
 };
 //这里就是返回值的问题，但是这里考虑可以把返回值设为string,直接将常数改为string返回就可以了
 class ExpAST : public BaseAST {
@@ -341,7 +389,6 @@ class LAndExpAST : public BaseAST {
        }
        return value;
    }
-
 }
 ;
 
