@@ -46,7 +46,8 @@ using namespace std;
 // 非终结符的类型定义
 %type <ast_val> FuncDef FuncType Block Stmt Exp PrimaryExp UnaryExp
 %type <ast_val> UnaryOp AddExp MulExp AddOp MulOp LOrExp LAndExp
-%type <ast_val> EqExp EqOp RelExp RelOp
+%type <ast_val> EqExp EqOp RelExp RelOp Decl ConstDecl MulConstDef
+%type <ast_val> SinConstDef ConstExp Btype MulBlockItem SinBlockItem LVal 
 %type <int_val> Number
 
 %%
@@ -114,12 +115,12 @@ ConstDecl
 //也就是说MulConstDef不进行重新分配而是复用即可
 MulConstDef
   : SinConstDef {
-      auto ast = MulConstDefAST();
-      ast->SinConstDef.push_back($1);
+      auto ast = new MulConstDefAST();
+      ast->SinConstDef.push_back(unique_ptr<BaseAST>($1));
       $$       = ast;
   } | MulConstDef ',' SinConstDef{
-      auto ast = unique_ptr<MulConstDefAST>($1);
-      ast->SinConstDef.push_back($2);
+      auto ast = (MulConstDefAST*)($1);
+      ast->SinConstDef.push_back(unique_ptr<BaseAST>($3));
       $$       = ast;
   }
   ;
@@ -128,14 +129,14 @@ SinConstDef
   : IDENT '=' ConstExp {
       auto ast      = new SinConstDefAST();
       ast->ident    = *unique_ptr<string>($1);
-      ast->ConstExp = unique_ptr<BaseAST>($2);
+      ast->ConstExp = unique_ptr<BaseAST>($3);
       $$            = ast;
   }
   ;
 
 ConstExp 
   : Exp {
-     auto ast = new ConstExpASt();
+     auto ast = new ConstExpAST();
      ast->Exp = unique_ptr<BaseAST>($1);
      $$       = ast;
   }
@@ -152,7 +153,7 @@ Btype
 Block
   : '{' MulBlockItem '}' {
     auto ast = new BlockAST();
-    ast->stmt = unique_ptr<BaseAST>($2);
+    ast->MulBlockItem = unique_ptr<BaseAST>($2);
     $$ = ast;
   }
   ;
@@ -160,11 +161,11 @@ Block
 MulBlockItem
   : SinBlockItem {
     auto ast = new MulBlockItemAST();
-    ast->SinBlockItem.push_back($1);
+    ast->SinBlockItem.push_back(unique_ptr<BaseAST>($1));
     $$       = ast;
   } | MulBlockItem SinBlockItem{
-    auto ast = unique_ptr<MulBlockItemAST>($1);
-    ast->SinBlockItem.push_back($2);
+    auto ast = (MulBlockItemAST*)($1);
+    ast->SinBlockItem.push_back(unique_ptr<BaseAST>($2));
     $$       = ast;
   }
   ;
@@ -327,7 +328,10 @@ MulExp
 
 LVal 
   : IDENT {
-
+      auto ast   = new LValAST();
+      ast->ident = *unique_ptr<string>($1);
+      ast->value = 0;
+      $$ = ast;
   }
   ;
 
@@ -340,7 +344,10 @@ PrimaryExp
     ast->number = 0;
     $$ = ast;
   } | LVal {
-
+    auto ast = new PrimaryExpAST();
+    ast->kind = LVAL;
+    ast->Lval = unique_ptr<BaseAST>($1);
+    $$ = ast;
   } | Number {
     auto ast  = new PrimaryExpAST();
     ast->kind = NUMBER;
