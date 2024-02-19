@@ -43,9 +43,13 @@ enum{
   SINVARDEFAST_UIN,
   SINVARDEFAST_INI,
   STMTAST_RET,
-  STMTAST_LVA
+  STMTAST_LVA,
+  LVALAST_LEFT,
+  LVALAST_RIGHT
 }Kind;
+
 extern unordered_map<string,int> ValueTable;
+extern unordered_map<string,int> VarTable;
 static int alloc_now = -1;
 class BaseAST {
  public:
@@ -173,7 +177,9 @@ class SinConstDefAST : public BaseAST{
 class VarDeclAST : public BaseAST {
 public:
      unique_ptr <BaseAST> MulVarDef;
-     void Dump() const override{}
+     void Dump() const override{
+        MulVarDef->Dump();
+     }
      void Dump(string & sign) const override {}
      void Dump(string &sign1, string &sign2,string &sign)const override{}
      [[nodiscard]] int calc() const override {return 0;}
@@ -182,7 +188,11 @@ public:
 class MulVarDefAST : public BaseAST {
 public:
     vector <unique_ptr<BaseAST>> SinValDef;
-    void Dump() const override{}
+    void Dump() const override{
+      for(auto &sinValDef : SinValDef) {
+          sinValDef->Dump();
+      }
+    }
     void Dump(string & sign) const override {}
     void Dump(string &sign1, string &sign2,string &sign)const override{}
     [[nodiscard]] int calc() const override {return 0;}
@@ -193,7 +203,28 @@ public:
     string ident;
     unique_ptr<BaseAST>InitVal;
     uint32_t type;
-    void Dump() const override{}
+    void Dump() const override{
+      int value;
+      if(ValueTable.find(ident) != ValueTable.end()){
+          cerr << '"' << ident << '"' << " has been defined as constant" <<endl;
+          exit(-1);
+      }
+       if(ValueTable.find(ident) != ValueTable.end()){
+          cerr << '"' << ident << '"' << " redefined" <<endl;
+          exit(-1);
+        }
+      cout << "  @"+ident <<" = " << "alloc i32" << endl;
+      switch(type) {
+        case SINVARDEFAST_UIN: break;
+        case SINVARDEFAST_INI:
+        {
+          value = InitVal->calc();
+          cout << "  store " << value<< ", " << "@"+ident<<endl;
+          break;
+        }
+      }
+      VarTable.insert(pair<string,int>(ident,value));
+    }
     void Dump(string & sign) const override {}
     void Dump(string &sign1, string &sign2,string &sign)const override{}
     [[nodiscard]] int calc() const override {return 0;}
@@ -205,7 +236,7 @@ public:
     void Dump() const override{}
     void Dump(string & sign) const override {}
     void Dump(string & sign1, string & sign2,string & sign)const override{}
-    [[nodiscard]] int calc() const override {return 0;}
+    [[nodiscard]] int calc() const override {return Exp->calc();}
 };
 
 class ConstExpAST : public BaseAST {
@@ -236,6 +267,7 @@ class MulBlockItemAST : public BaseAST {
   public:
     vector <unique_ptr<BaseAST>> SinBlockItem;
     void Dump() const override{
+      cout << "%" << "entry:" << endl;
       for(auto &sinBlockItem : SinBlockItem) {
         sinBlockItem->Dump();
       }
@@ -269,18 +301,24 @@ class StmtAST : public BaseAST {
     std::unique_ptr<BaseAST> Lval;
     uint32_t type;
     void Dump() const override {
-      cout << "%" << "entry:" << endl;
       string sign;
       switch(type) {
           case STMTAST_RET:
               Exp->Dump(sign);
+              cout << "  " << "ret " << sign << endl; 
               break;
-          case STMTAST_LVA:
-              break;
+          case STMTAST_LVA:{
+            string sign1,sign2;
+            //Lval->Dump(sign1);
+            Exp->Dump(sign2);
+            cout << "  " << "store "<< sign2 << ", "; //这里使用一种比较蠢的方法：用Dump输出Lval的信息，不换行，有点凑的方式
+            Lval->Dump();
+            break;
+          }
           default:
               assert(0);
       }
-      cout << "  " << "ret " << sign << endl; 
+      
     }
     void Dump(string &sign) const override{}
     void Dump(string &sign1,string &sign2,string &sign) const override{}
@@ -729,15 +767,38 @@ class LValAST : public BaseAST {
     public:
       string ident;
       int value;
-      void Dump() const override {}
+      void Dump() const override {
+        cout << "@" <<ident << endl;
+      }
       void Dump(string &sign) const override {
+       if( ValueTable.find(ident) != ValueTable.end()){
           int CalValue = ValueTable.at(ident);
           sign = to_string(CalValue);
+       }
+       else if(VarTable.find(ident) != VarTable.end()) {
+          alloc_now++;
+          sign = "%"+to_string(alloc_now);
+          cout << "  "<<sign << " = " << "load " << "@"+ident<<endl;
+       }
+       else {
+         cerr << "Error: " << '"' << ident << '"' << " is not defined" << endl;
+       }
+          
       }
       void Dump(string &sign1,string &sign2,string &sign3) const override{}
       [[nodiscard]] int calc() const override{
+        if (ValueTable.find(ident) != ValueTable.end())
+        {
           int CalValue = ValueTable.at(ident);
           return CalValue;
+        }
+        else if(VarTable.find(ident) != VarTable.end()) {
+          return VarTable.at(ident);
+        }
+        else
+        {
+          cerr << "Error: " << '"' << ident << '"' << "is not defined" << endl;
+        }
       }
 };
 //对于OP类型的，如果是enum表示的type,返回type值，如果直接存储运算符，则返回运算符的值
