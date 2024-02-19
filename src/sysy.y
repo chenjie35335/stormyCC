@@ -48,7 +48,7 @@ using namespace std;
 %type <ast_val> UnaryOp AddExp MulExp AddOp MulOp LOrExp LAndExp
 %type <ast_val> EqExp EqOp RelExp RelOp Decl ConstDecl MulConstDef
 %type <ast_val> SinConstDef ConstExp Btype MulBlockItem SinBlockItem LVal
-%type <ast_val> VarDecl
+%type <ast_val> VarDecl SinVarDef MulVarDef InitVal
 %type <int_val> Number
 
 %%
@@ -155,7 +155,7 @@ MulVarDef
        ast->SinValDef.push_back(unique_ptr<BaseAST>($1));
        $$           = ast;
   } | MulVarDef ',' SinVarDef{
-       auto ast     = unique_ptr<MulVarDefAST>($1);
+       auto ast     = (MulVarDefAST*)($1);
        ast->SinValDef.push_back(unique_ptr<BaseAST>($3));
        $$           = ast;
   }
@@ -165,12 +165,12 @@ SinVarDef
   : IDENT {
      auto ast   = new SinVarDefAST();
      ast->type  =  SINVARDEFAST_UIN;
-     ast->ident = *unique_ptr<BaseAST>($1);
+     ast->ident = *unique_ptr<string>($1);
      $$         = ast;
   } | IDENT '=' InitVal {
     auto ast   = new SinVarDefAST();
     ast->type  =  SINVARDEFAST_INI;
-    ast->ident = *unique_ptr<BaseAST>($1);
+    ast->ident = *unique_ptr<string>($1);
     ast->InitVal= unique_ptr<BaseAST>($3);
     $$         = ast;
   }
@@ -239,9 +239,14 @@ Stmt
   : RETURN Exp ';' {
     auto ast = new StmtAST();
     ast->Exp = unique_ptr<BaseAST>($2);
-    $$ = ast;
-  } | Lval '=' Exp ';' {
-
+    ast->type= STMTAST_RET;
+    $$       = ast;
+  } | LVal '=' Exp ';' {
+    auto ast = new StmtAST();
+    ast->Exp = unique_ptr<BaseAST> ($3);
+    ast->Lval= unique_ptr<BaseAST> ($1);
+    ast->type= STMTAST_LVA;
+    $$       = ast;
   }
   ;
           

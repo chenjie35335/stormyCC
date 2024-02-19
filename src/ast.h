@@ -41,7 +41,9 @@ enum{
   SINBLOCKITEM_DEC,
   SINBLOCKITEM_STM,
   SINVARDEFAST_UIN,
-  SINVARDEFAST_INI
+  SINVARDEFAST_INI,
+  STMTAST_RET,
+  STMTAST_LVA
 }Kind;
 extern unordered_map<string,int> ValueTable;
 static int alloc_now = -1;
@@ -173,7 +175,7 @@ public:
      unique_ptr <BaseAST> MulVarDef;
      void Dump() const override{}
      void Dump(string & sign) const override {}
-     void Dump(string &sign1, string &sign2,string &sign){}
+     void Dump(string &sign1, string &sign2,string &sign)const override{}
      [[nodiscard]] int calc() const override {return 0;}
 };
 
@@ -182,7 +184,7 @@ public:
     vector <unique_ptr<BaseAST>> SinValDef;
     void Dump() const override{}
     void Dump(string & sign) const override {}
-    void Dump(string &sign1, string &sign2,string &sign){}
+    void Dump(string &sign1, string &sign2,string &sign)const override{}
     [[nodiscard]] int calc() const override {return 0;}
 };
 
@@ -193,7 +195,7 @@ public:
     uint32_t type;
     void Dump() const override{}
     void Dump(string & sign) const override {}
-    void Dump(string &sign1, string &sign2,string &sign){}
+    void Dump(string &sign1, string &sign2,string &sign)const override{}
     [[nodiscard]] int calc() const override {return 0;}
 };
 
@@ -202,7 +204,7 @@ public:
     unique_ptr<BaseAST>Exp;
     void Dump() const override{}
     void Dump(string & sign) const override {}
-    void Dump(string & sign1, string & sign2,string & sign){}
+    void Dump(string & sign1, string & sign2,string & sign)const override{}
     [[nodiscard]] int calc() const override {return 0;}
 };
 
@@ -264,10 +266,20 @@ class StmtAST : public BaseAST {
  public:
     //int num;
     std::unique_ptr<BaseAST> Exp;
+    std::unique_ptr<BaseAST> Lval;
+    uint32_t type;
     void Dump() const override {
       cout << "%" << "entry:" << endl;
       string sign;
-      Exp->Dump(sign);
+      switch(type) {
+          case STMTAST_RET:
+              Exp->Dump(sign);
+              break;
+          case STMTAST_LVA:
+              break;
+          default:
+              assert(0);
+      }
       cout << "  " << "ret " << sign << endl; 
     }
     void Dump(string &sign) const override{}
