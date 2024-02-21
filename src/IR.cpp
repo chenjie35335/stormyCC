@@ -58,13 +58,12 @@ void Visit(const koopa_raw_binary_t &binary,string &sign) {
         break;
         case KOOPA_RBO_SUB: 
         //printf("parsing sub\n");
-        cout << "  sub  " +s1+", "+ s1 + ", " +s2 <<endl;
+        cout << "  sub  " +sign+", "+ s1 + ", " +s2 <<endl;
         break;
         case KOOPA_RBO_EQ : 
         //printf("parsing eq\n");
-        cout << "  xor  " +s1+", "+ s1 + ", " +s2 <<endl;
-        cout << "  seqz " +s1+", "+ s1  <<endl;
-        sign = s1;
+        cout << "  xor  " +sign+", "+ s1 + ", " +s2 <<endl;
+        cout << "  seqz " +sign+", "+ sign  <<endl;
         break;
         case KOOPA_RBO_NOT_EQ : 
 //printf("parsing eq\n");

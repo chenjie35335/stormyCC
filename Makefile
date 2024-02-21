@@ -110,7 +110,19 @@ test:
 	build/compiler $(TARGET) hello.c -o hello.koopa
 
 autotest:
-	autotest -koopa -s lv3 /root/compiler
+	autotest -riscv -s lv3 /root/compiler
+
+koopa-test:
+	./build/compiler -koopa hello.c -o hello.koopa
+	koopac hello.koopa | llc --filetype=obj -o hello.o
+	clang hello.o -L$CDE_LIBRARY_PATH/native -lsysy -o hello
+	./hello
+
+riscv-test:
+	./compiler -riscv hello.c -o hello.S
+	clang hello.S -c -o hello.o -target riscv32-unknown-linux-elf -march=rv32im -mabi=ilp32
+	ld.lld hello.o -L$CDE_LIBRARY_PATH/riscv32 -lsysy -o hello
+	qemu-riscv32-static hello
 
 
 -include $(DEPS)

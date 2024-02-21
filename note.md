@@ -96,3 +96,26 @@ int main() {
 
 
 unique_ptr
+
+有关测例的问题，这里给出一些说明：
+
+测试有关内容分析：
+  koopa测试
+```shell
+./build/compiler -koopa hello.c -o hello.koopa
+koopac hello.koopa | llc --filetype=obj -o hello.o
+clang hello.o -L$CDE_LIBRARY_PATH/native -lsysy -o hello
+./hello
+```
+  riscv测试
+```shell
+./compiler -riscv hello.c -o hello.S
+clang hello.S -c -o hello.o -target riscv32-unknown-linux-elf -march=rv32im -ma
+ld.lld hello.o -L$CDE_LIBRARY_PATH/riscv32 -lsysy -o hello
+qemu-riscv32-static hello
+
+```
+
+riscv程序调试
+详细见：
+    [调试 RISC-V 程序](https://pku-minic.github.io/online-doc/#/misc-app-ref/environment)

@@ -55,8 +55,10 @@ class BaseAST {
  public:
   virtual ~BaseAST() = default;
   virtual void Dump() const = 0;//这个用来无返回值遍历
-  virtual void Dump(string &sign) const = 0;//这个用来带有返回值的遍历
+  virtual void Dump(string &sign) const = 0;//这个用来带有单个返回值的遍历
   virtual void Dump(string &sign1,string &sign2,string &sign) const = 0;
+  //这个用来带有双目运算符的遍历
+  virtual void Dump(int value) const = 0; // 这个用来传递整形变量
   [[nodiscard]] virtual int calc() const = 0;//计算表达式的值
 };
 // CompUnit 是 BaseAST
@@ -68,6 +70,7 @@ class CompUnitAST : public BaseAST {
     alloc_now = -1;
     func_def->Dump();
   }
+  void Dump(int value) const override{}
   void Dump(string &sign) const override {}//这两个不需要在此处重载
   void Dump(string &sign1,string &sign2,string &sign) const override{}
   [[nodiscard]] int calc() const override{return 0;}
@@ -85,6 +88,7 @@ class FuncDefAST : public BaseAST {
     func_type->Dump();
     block->Dump();
   }
+  void Dump(int value) const override{}
   void Dump(string &sign) const override {}
   void Dump(string &sign1,string &sign2,string &sign) const override{}
   [[nodiscard]] int calc() const override{return 0;}
@@ -96,6 +100,7 @@ class FuncTypeAST : public BaseAST {
     void Dump() const override {
       cout << "i32" << " ";
     }
+    void Dump(int value) const override{}
     void Dump(string &sign) const override {}
     void Dump(string &sign1,string &sign2,string &sign) const override{}
     [[nodiscard]] int calc() const override{return 0;}
@@ -113,9 +118,8 @@ class DeclAST : public BaseAST {
             default: assert(0);
         }
     }
-    void Dump(string &sign) const override {
-      
-    }
+    void Dump(string &sign) const override {}
+    void Dump(int value) const override{}
     void Dump(string &sign1,string &sign2,string &sign) const override{}
     [[nodiscard]] int calc() const override{return 0;}
 };
@@ -127,8 +131,8 @@ class ConstDeclAST : public BaseAST {
     void Dump() const override {
        MulConstDef->Dump();
     }
-    void Dump(string &sign) const override {
-    }
+    void Dump(string &sign) const override {}
+    void Dump(int value) const override{}
     void Dump(string &sign1,string &sign2,string &sign) const override{}
     [[nodiscard]] int calc() const override{return 0;}
 };
@@ -136,9 +140,9 @@ class ConstDeclAST : public BaseAST {
 class BtypeAST : public BaseAST {
   public:
     string type;
-    void Dump() const override {
-    }
+    void Dump() const override {}
     void Dump(string &sign) const override {}
+    void Dump(int value) const override{}
     void Dump(string &sign,string  &sign1,string &sign2) const override{}
     [[nodiscard]] int calc() const override{return 0;}
 };
@@ -151,9 +155,8 @@ class MulConstDefAST : public BaseAST {
           sinConstDef->Dump();
         }
     }
-    void Dump(string &sign) const override {
-
-    }
+    void Dump(string &sign) const override {}
+    void Dump(int value) const override{}
     void Dump(string &sign1,string &sign2,string &sign) const override{}
     [[nodiscard]] int calc() const override{return 0;}
 };
@@ -170,6 +173,7 @@ class SinConstDefAST : public BaseAST{
       ValueTable.insert(pair<string,int>(ident,value));
     }
     void Dump(string &sign) const override {} 
+    void Dump(int value) const override{}
     void Dump(string &sign1,string &sign2,string &sign) const override{}
     [[nodiscard]] int calc() const override{return 0;}
 };
@@ -181,6 +185,7 @@ public:
         MulVarDef->Dump();
      }
      void Dump(string & sign) const override {}
+     void Dump(int value) const override{}
      void Dump(string &sign1, string &sign2,string &sign)const override{}
      [[nodiscard]] int calc() const override {return 0;}
 };
@@ -194,6 +199,7 @@ public:
       }
     }
     void Dump(string & sign) const override {}
+    void Dump(int value) const override{}
     void Dump(string &sign1, string &sign2,string &sign)const override{}
     [[nodiscard]] int calc() const override {return 0;}
 };
@@ -225,6 +231,7 @@ public:
       }
       VarTable.insert(pair<string,int>(ident,value));
     }
+    void Dump(int value) const override{}
     void Dump(string & sign) const override {}
     void Dump(string &sign1, string &sign2,string &sign)const override{}
     [[nodiscard]] int calc() const override {return 0;}
@@ -235,6 +242,7 @@ public:
     unique_ptr<BaseAST>Exp;
     void Dump() const override{}
     void Dump(string & sign) const override {}
+    void Dump(int value) const override{}
     void Dump(string & sign1, string & sign2,string & sign)const override{}
     [[nodiscard]] int calc() const override {return Exp->calc();}
 };
@@ -244,6 +252,7 @@ class ConstExpAST : public BaseAST {
     unique_ptr<BaseAST>Exp;
     void Dump() const override{}
     void Dump(string &sign) const override {} 
+    void Dump(int value) const override{}
     void Dump(string &sign1,string &sign2,string &sign) const override{}
     [[nodiscard]] int calc() const override{
         return Exp->calc();
@@ -259,6 +268,7 @@ class BlockAST : public BaseAST {
       cout << "}" << endl;
 }
     void Dump(string &sign) const override {}
+    void Dump(int value) const override{}
     void Dump(string &sign1,string &sign2,string &sign) const override{}
     [[nodiscard]] int calc() const override{return 0;}
 };
@@ -273,6 +283,7 @@ class MulBlockItemAST : public BaseAST {
       }
     }
     void Dump(string &sign) const override {} 
+    void Dump(int value) const override{}
     void Dump(string &sign1,string &sign2,string &sign) const override{}
     [[nodiscard]] int calc() const override{return 0;}
 };
@@ -290,6 +301,7 @@ class SinBlockItemAST : public BaseAST {
       }
     }
     void Dump(string &sign) const override {} 
+    void Dump(int value) const override{}
     void Dump(string &sign1,string &sign2,string &sign) const override{}
     [[nodiscard]] int calc() const override{return 0;}
 };
@@ -312,7 +324,8 @@ class StmtAST : public BaseAST {
             //Lval->Dump(sign1);
             Exp->Dump(sign2);
             cout << "  " << "store "<< sign2 << ", "; //这里使用一种比较蠢的方法：用Dump输出Lval的信息，不换行，有点凑的方式
-            Lval->Dump();
+            int value = Exp->calc();
+            Lval->Dump(value);
             break;
           }
           default:
@@ -321,6 +334,7 @@ class StmtAST : public BaseAST {
       
     }
     void Dump(string &sign) const override{}
+    void Dump(int value) const override{}
     void Dump(string &sign1,string &sign2,string &sign) const override{}
     [[nodiscard]] int calc() const override{return 0;}
 };
@@ -329,6 +343,7 @@ class ExpAST : public BaseAST {
   public:
     std::unique_ptr<BaseAST> LOrExp;
     void Dump() const override {}
+    void Dump(int value) const override{}
     void Dump(string &sign) const override{
       //cout << "enter Exp" << endl;
         LOrExp->Dump(sign);
@@ -345,6 +360,7 @@ class LOrExpAST : public BaseAST {
    std::unique_ptr<BaseAST> LOrExp;
    uint32_t type;
    void Dump() const override{}
+   void Dump(int value) const override{}
    void Dump(string &sign) const override{
         //cout << "enter lorexp" << endl;
         string sign1;
@@ -394,6 +410,7 @@ class LAndExpAST : public BaseAST {
    std::unique_ptr<BaseAST> LAndExp;
    uint32_t type;
    void Dump() const override{}
+   void Dump(int value) const override{}
    void Dump(string &sign) const override{
     string s1,s2;
     switch(type) {
@@ -449,6 +466,7 @@ class EqExpAST : public BaseAST {
    std::unique_ptr<BaseAST> EqOp;
    uint32_t type;
    void Dump() const override{}
+   void Dump(int value) const override{}
    void Dump(string &sign) const override{
      string s1,s2;
      switch(type) {
@@ -495,6 +513,7 @@ class EqOpAST : public BaseAST {
   public:
     uint32_t type;
     void Dump() const override{}
+    void Dump(int value) const override{}
     void Dump(string &sign) const override{}
     void Dump(string &sign1,string &sign2,string &sign)const override{
         alloc_now++;
@@ -521,6 +540,7 @@ class RelExpAST : public BaseAST {
    std::unique_ptr<BaseAST> RelOp;
    uint32_t type;
    void Dump() const override{}
+   void Dump(int value) const override{}
    void Dump(string &sign) const override{
       string s1,s2;
       switch(type) {
@@ -571,6 +591,7 @@ class RelOpAST : public BaseAST {
   public:
     uint32_t type;
     void Dump() const override{}
+    void Dump(int value) const override{}
     void Dump(string &sign) const override{}
     void Dump(string &sign1,string &sign2,string &sign)const override{
         alloc_now++;
@@ -603,6 +624,7 @@ class AddExpAST : public BaseAST {
     uint32_t type;
     std::unique_ptr<BaseAST> AddOp;
     void Dump() const override{}
+    void Dump(int value) const override{}
     void Dump(string &sign) const override{
       //cout << "enter AddExp" << endl;
       switch(type) {
@@ -654,6 +676,7 @@ class MulExpAST : public BaseAST {
     uint32_t type;
     std::unique_ptr<BaseAST> MulOp;
     void Dump() const override{}
+    void Dump(int value) const override{}
     void Dump(string &sign) const override{
       switch(type) {
         case MULEXPAST_MUL: {
@@ -697,6 +720,7 @@ class UnaryExpAST_P : public BaseAST {
   //UnaryExp第一种情况
     std::unique_ptr<BaseAST> PrimaryExp;
     void Dump() const override {}
+    void Dump(int value) const override{}
     void Dump(string &sign) const override{
       PrimaryExp->Dump(sign);
     }
@@ -712,6 +736,7 @@ class UnaryExpAST_U : public BaseAST {
     std::unique_ptr<BaseAST> UnaryOp;
     std::unique_ptr<BaseAST> UnaryExp;
     void Dump() const override{}
+    void Dump(int value) const override{}
     void Dump(string &sign) const override{
         UnaryExp->Dump(sign);
         UnaryOp->Dump(sign);
@@ -739,6 +764,7 @@ class PrimaryExpAST : public BaseAST {
   uint32_t kind;
     /*这里不带参数的不实现*/
   void Dump() const override{}
+  void Dump(int value) const override{}
     /*如果遍历结果为常数，直接返回，如果不是，继续遍历*/
   void Dump(string &sign) const override{
       //if(kind == UNARYEXP)
@@ -770,6 +796,10 @@ class LValAST : public BaseAST {
       void Dump() const override {
         cout << "@" <<ident << endl;
       }
+      void Dump(int value) const override {
+        cout << "@" <<ident << endl;
+        VarTable[ident] = value;
+      }
       void Dump(string &sign) const override {
        if( ValueTable.find(ident) != ValueTable.end()){
           int CalValue = ValueTable.at(ident);
@@ -798,6 +828,7 @@ class LValAST : public BaseAST {
         else
         {
           cerr << "Error: " << '"' << ident << '"' << "is not defined" << endl;
+          exit(-1);
         }
       }
 };
@@ -806,6 +837,7 @@ class UnaryOpAST : public BaseAST {
   public:
     char op;
     void Dump() const override {}
+    void Dump(int value) const override{}
     void Dump(string &sign) const override {
       //在运算符处生成中间表示的语句
       //if(sign.at(0) == '%') {
@@ -832,6 +864,7 @@ class AddOpAST : public BaseAST {
   public:
     char op;
     void Dump() const override {}
+    void Dump(int value) const override{}
     void Dump(string &sign) const override{}
     void Dump(string &sign1,string &sign2,string &sign) const override{
         alloc_now++;
@@ -854,6 +887,7 @@ class MulOpAST : public BaseAST {
   public:
     char op;
     void Dump() const override {}
+    void Dump(int value) const override{}
     void Dump(string &sign) const override{}
     void Dump(string &sign1,string &sign2,string &sign) const override {
         alloc_now++;
