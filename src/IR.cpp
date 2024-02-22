@@ -117,10 +117,14 @@ void Visit(const koopa_raw_store_t &store,string &sign) {
     string sign1,sign2;
     Visit(store.value,sign1);
     Visit(store.dest,sign2);
+    cout << "  sw   " << sign1 << ", " <<sign2 <<endl;
 }
 
 void Visit(const koopa_raw_load_t &load,string &sign) {
     Visit(load.src,sign);
+    string sign1 = alloc_reg();
+    cout << "  lw   " << sign1 << ", " <<sign <<endl;
+    sign = sign1;
 }
 //现在不清楚的是这里是图还是树，
 //现在是想办法建立树节点与分配的寄存器之间的关系，从而实现剪枝，避免多余
@@ -130,6 +134,10 @@ void Visit(const koopa_raw_value_t &value,string &sign) {
     //printf("value = %s\n",value->name);
     if(reg_alloc.find(value) != reg_alloc.end()) {
         sign = reg_alloc.at(value);
+        return;
+    }
+    else if(stack_alloc.find(value) != stack_alloc.end()){
+        sign = to_string(stack_alloc.at(value))+"(sp)";
         return;
     }
     else{
@@ -145,21 +153,25 @@ void Visit(const koopa_raw_value_t &value,string &sign) {
         case KOOPA_RVT_INTEGER: {
             //printf("parse integer\n");
             Visit(kind.data.integer,sign);
+            reg_alloc.insert(pair<koopa_raw_value_t,string>(value,sign));
             break;
         }
         case KOOPA_RVT_BINARY: {
             //printf("parse binary\n");
             Visit(kind.data.binary,sign);
+            reg_alloc.insert(pair<koopa_raw_value_t,string>(value,sign));
             break;
         }
         case KOOPA_RVT_ALLOC: {
             //printf("parse alloc\n");
-            
+            int offset = alloc_stack();
+            stack_alloc.insert(pair<koopa_raw_value_t,int>(value,offset));
             break;
         }
         case KOOPA_RVT_LOAD: {
             //printf("parse load\n");
             Visit(kind.data.load,sign);
+            reg_alloc.insert(pair<koopa_raw_value_t,string>(value,sign));
             break;
         }
         case KOOPA_RVT_STORE: {
@@ -170,7 +182,6 @@ void Visit(const koopa_raw_value_t &value,string &sign) {
         default:
             assert(false);
     }
-    reg_alloc.insert(pair<koopa_raw_value_t,string>(value,sign));
     }
 } 
 //raw_basic_block
@@ -191,6 +202,7 @@ void Visit(const koopa_raw_function_t &func,string &sign)
 //这里我没有遍历所有的，是因为如果遍历会出现重复打印，可能之后还会修改
 void Visit(const koopa_raw_slice_t &slice,string &sign){
     for(size_t i = 0; i < slice.len; i++) {
+        //cout << endl;
         //printf("slice.len == %d, i == %d\n",slice.len,i);
         //auto ptr = slice.buffer[slice.len-1];
         auto ptr = slice.buffer[i];
