@@ -1,4 +1,5 @@
 #include "common.h"
+#include <unordered_map>
 #pragma once
 
 void Visit(const koopa_raw_return_t &ret,string &sign);
@@ -8,7 +9,10 @@ void Visit(const koopa_raw_function_t &func,string &sign);
 void Visit(const koopa_raw_slice_t &slice,string &sign);
 void Visit(const koopa_raw_binary_t &binary,string &sign);
 void generateASM(const koopa_raw_program_t &program);
+unordered_map <string,int> stack_alloc;
+unordered_map <koopa_raw_value_t,string> reg_alloc;
 static int selected_reg = 0;
+static int stack_offset = 0;
 const char *regs[] = {
   "x0", "ra", "sp", "gp", "tp", "t0", "t1", "t2",
   "s0", "s1", "a0", "a1", "a2", "a3", "a4", "a5",

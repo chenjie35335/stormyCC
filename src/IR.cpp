@@ -1,5 +1,8 @@
 #include "IR.h"
 extern int selected_reg;
+//有关于变量的部分，需要用到内存相关的内容，这里需要一个映射来表示一下内容
+//这个映射存储着表示一个变量和变量关于sp的偏移量相关的内容
+//同时需要维护一个全局变量表示当前可分配的栈的位置（注意，由于我们这里使用的是面向过程的方式，所以这里用全局变量，过几天这里将全部改为面向对象）
 void backend(char *str,const char *output)
 {
     koopa_program_t program = NULL;
@@ -109,18 +112,38 @@ void Visit(const koopa_raw_binary_t &binary,string &sign) {
     }
     cout << endl;
 }
+
+void Visit(const koopa_raw_store_t &store,string &sign) {
+    string sign1,sign2;
+    Visit(store.value,sign1);
+    Visit(store.dest,sign2);
+}
+
+void Visit(const koopa_raw_load_t &load,string &sign) {
+    Visit(load.src,sign);
+}
+//现在不清楚的是这里是图还是树，
+//现在是想办法建立树节点与分配的寄存器之间的关系，从而实现剪枝，避免多余
+//这里将寄存器分配和这个koopa_raw_value_t绑定在一起试试
 //raw_value
 void Visit(const koopa_raw_value_t &value,string &sign) {
+    //printf("value = %s\n",value->name);
+    if(reg_alloc.find(value) != reg_alloc.end()) {
+        sign = reg_alloc.at(value);
+        return;
+    }
+    else{
     const auto& kind = value->kind;
     switch(kind.tag) {
         case KOOPA_RVT_RETURN: {
-           // printf("parse return\n");
+            //printf("parse return\n");
             Visit(kind.data.ret,sign);
-            printf("  ret\n");
+            cout << "  addi sp, sp, 256" <<  endl;
+            cout << "  ret" << endl;
             break;
         }
         case KOOPA_RVT_INTEGER: {
-           // printf("parse integer\n");
+            //printf("parse integer\n");
             Visit(kind.data.integer,sign);
             break;
         }
@@ -129,8 +152,25 @@ void Visit(const koopa_raw_value_t &value,string &sign) {
             Visit(kind.data.binary,sign);
             break;
         }
+        case KOOPA_RVT_ALLOC: {
+            //printf("parse alloc\n");
+            
+            break;
+        }
+        case KOOPA_RVT_LOAD: {
+            //printf("parse load\n");
+            Visit(kind.data.load,sign);
+            break;
+        }
+        case KOOPA_RVT_STORE: {
+            //printf("parse store\n");
+            Visit(kind.data.store,sign);
+            break;
+        }
         default:
             assert(false);
+    }
+    reg_alloc.insert(pair<koopa_raw_value_t,string>(value,sign));
     }
 } 
 //raw_basic_block
@@ -138,21 +178,27 @@ void Visit(const koopa_raw_basic_block_t &bb,string &sign){
     Visit(bb->insts,sign);
 } 
 //raw_function
+//这里先只做一个map,如果之后使用多函数，可能会使用map来存储（后话暂且不说）
 void Visit(const koopa_raw_function_t &func,string &sign)
 {
         printf("  .globl %s\n",func->name+1);
         printf("%s:\n",func->name+1);
+        cout << "  addi sp, sp, -256" <<  endl;
+        stack_offset = 0;
         Visit(func->bbs,sign);
+       
 }
 //这里我没有遍历所有的，是因为如果遍历会出现重复打印，可能之后还会修改
 void Visit(const koopa_raw_slice_t &slice,string &sign){
-    //for(size_t i = 0; i < slice.len; i++) {
+    for(size_t i = 0; i < slice.len; i++) {
         //printf("slice.len == %d, i == %d\n",slice.len,i);
-        auto ptr = slice.buffer[slice.len-1];
+        //auto ptr = slice.buffer[slice.len-1];
+        auto ptr = slice.buffer[i];
         switch(slice.kind) {
             case KOOPA_RSIK_FUNCTION:
                 //printf("begin parse function\n");
-                Visit(reinterpret_cast<koopa_raw_function_t>(ptr),sign);break;
+                Visit(reinterpret_cast<koopa_raw_function_t>(ptr),sign);
+                break;
             case KOOPA_RSIK_BASIC_BLOCK:
                 //printf("begin parse block\n");
                 Visit(reinterpret_cast<koopa_raw_basic_block_t>(ptr),sign);break;
@@ -162,7 +208,7 @@ void Visit(const koopa_raw_slice_t &slice,string &sign){
             default:
                 assert(false);
         }
-    //}
+    }
 }
 
 void generateASM(const koopa_raw_program_t &program)

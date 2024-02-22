@@ -61,7 +61,9 @@
     "*.y": "c",
     "deque": "c",
     "string": "c",
-    "vector": "c"
+    "vector": "c",
+    "memory": "cpp",
+    "unordered_map": "cpp"
   },
   "files.watcherExclude": {
     "**/target": true

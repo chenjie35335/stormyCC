@@ -45,3 +45,21 @@ make DEBUG=0 BUILD_DIR="build目录" LIB_DIR="libkoopa目录" INC_DIR="libkoopa�
 如需链接 `libkoopa`, 你的 `Makefile` 应当处理 `LIB_DIR` 和 `INC_DIR`.
 
 模板中的 `Makefile` 已经处理了上述内容, 你无需额外关心.
+
+## 本人计划
+3月 编译原理
+    学习后端理论
+    放弃实验后端，完成lv8的前端部分（生成IR）
+
+4月 编译原理
+    确定是否比赛
+    完成实验后端内容，
+
+5月 编译原理
+    如果打比赛，5月份重构koopa
+
+6月-7月中
+    如果打比赛，完成测例
+
+7月-后
+    优化

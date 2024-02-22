@@ -1,16 +1,20 @@
   .text
   .globl main
 main:
-  li   ra, 6
-  xor  ra, ra, x0
-  seqz ra, ra
+  addi sp, sp, -256
+  li   t0, 3
+  li   t1, 4
+  add  t2, t0, t1
 
-  sub  x0, x0, ra
+  li   s0, 2
+  mul  s1, s0, t2
 
-  sub  x0, x0, gp
+  li   a2, 5
+  div  a3, s1, a2
 
-  xor  tp, tp, x0
-  seqz tp, tp
+  li   a4, 1
+  add  a5, a4, a3
 
-  mv   a0, tp
+  mv   a0, a5
+  addi sp, sp, 256
   ret
