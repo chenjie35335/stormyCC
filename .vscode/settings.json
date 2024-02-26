@@ -63,7 +63,8 @@
     "string": "c",
     "vector": "c",
     "memory": "cpp",
-    "unordered_map": "cpp"
+    "unordered_map": "cpp",
+    "cstdio": "cpp"
   },
   "files.watcherExclude": {
     "**/target": true

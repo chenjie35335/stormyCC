@@ -31,14 +31,7 @@
 //   return 0;
 // }
 
-#include <cassert>
-#include <cstdio>
-#include <iostream>
-#include <memory>
-#include <string>
-#include <string.h>
-#include "ast.h"
-#include <cstdlib>
+#include <common.h>
 using namespace std;
 
 

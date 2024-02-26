@@ -52,8 +52,8 @@ make DEBUG=0 BUILD_DIR="build目录" LIB_DIR="libkoopa目录" INC_DIR="libkoopa�
     3月1日-3月15日 语法分析
     3月16日-3月31日 词法分析
     实验：
-    第一周： lv5
-    第二周： 重构之前代码
+    第一周： 重构之前代码
+    第二周： lv5
     第三周： lv6
     第四周： lv7
 

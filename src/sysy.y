@@ -1,7 +1,7 @@
 %code requires {
   #include <memory>
   #include <string>
-  #include "ast.h"
+  #include <common.h>
   #include <string.h>
 }
 
@@ -11,7 +11,7 @@
 #include <memory>
 #include <string>
 #include <string.h>
-#include "ast.h"
+#include <common.h>
 
 // 声明 lexer 函数和错误处理函数
 int yylex();
@@ -47,7 +47,7 @@ using namespace std;
 %type <ast_val> FuncDef FuncType Block Stmt Exp PrimaryExp UnaryExp
 %type <ast_val> UnaryOp AddExp MulExp AddOp MulOp LOrExp LAndExp
 %type <ast_val> EqExp EqOp RelExp RelOp Decl ConstDecl MulConstDef
-%type <ast_val> SinConstDef ConstExp Btype MulBlockItem SinBlockItem LVal
+%type <ast_val> SinConstDef ConstExp Btype MulBlockItem SinBlockItem LValL LValR
 %type <ast_val> VarDecl SinVarDef MulVarDef InitVal
 %type <int_val> Number
 
@@ -241,7 +241,7 @@ Stmt
     ast->Exp = unique_ptr<BaseAST>($2);
     ast->type= STMTAST_RET;
     $$       = ast;
-  } | LVal '=' Exp ';' {
+  } | LValL '=' Exp ';' {
     auto ast = new StmtAST();
     ast->Exp = unique_ptr<BaseAST> ($3);
     ast->Lval= unique_ptr<BaseAST> ($1);
@@ -384,15 +384,21 @@ MulExp
   }
   ;
 
-LVal 
+LValL 
   : IDENT {
-      auto ast   = new LValAST();
+      auto ast   = new LValLAST();
       ast->ident = *unique_ptr<string>($1);
-      ast->value = 0;
       $$ = ast;
   }
   ;
 
+LValR
+  : IDENT {
+    auto ast   = new LValRAST();
+    ast->ident = *unique_ptr<string>($1);
+    $$ = ast;
+  }
+  ;
 
 PrimaryExp
   : '(' Exp ')' {
@@ -401,7 +407,7 @@ PrimaryExp
     ast->Exp  = unique_ptr<BaseAST>($2);
     ast->number = 0;
     $$ = ast;
-  } | LVal {
+  } | LValR {
     auto ast = new PrimaryExpAST();
     ast->kind = LVAL;
     ast->Lval = unique_ptr<BaseAST>($1);

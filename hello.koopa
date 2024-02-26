@@ -1,15 +1,7 @@
-  .text
-  .globl main
-main:
-  addi sp, sp, -256
-  li   t0, 10
-  sw   t0, 0(sp)
-  lw   t1, 0(sp)
-  li   t2, 1
-  add  s0, t1, t2
-
-  sw   s0, 0(sp)
-  lw   s1, 0(sp)
-  mv   a0, s1
-  addi sp, sp, 256
-  ret
+fun @main(): i32 {
+%entry:
+  @x = alloc i32
+  store 10, @x
+  %0 = add , 1
+  store %0,   ret 
+}
