@@ -102,7 +102,7 @@ clean:
 	-rm -rf $(BUILD_DIR)
 
 docker:
-	docker run -it -v /home/stormy/curricular/compiler/stormyCC:/root/compiler maxxing/compiler-dev bash
+	docker run --privileged -it -v /home/stormy/curricular/compiler/stormyCC:/root/compiler maxxing/compiler-dev bash
 
 test:
 	make clean
@@ -123,6 +123,9 @@ riscv-test:
 	clang hello.S -c -o hello.o -target riscv32-unknown-linux-elf -march=rv32im -mabi=ilp32
 	ld.lld hello.o -L$$CDE_LIBRARY_PATH/riscv32 -lsysy -o hello
 	qemu-riscv32-static hello
+
+gdb:
+	gdb --args ./build/compiler -koopa hello.c -o hello  
 
 
 -include $(DEPS)

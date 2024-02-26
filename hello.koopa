@@ -1,7 +1,10 @@
-fun @main(): i32 {
-%entry:
-  @x = alloc i32
-  store 10, @x
-  %0 = add , 1
-  store %0,   ret 
-}
+  .text
+  .globl main
+main:
+  addi sp, sp, -256
+  li   t0, 1
+  sw   t0, 0(sp)
+  lw   t1, 0(sp)
+  mv   a0, t1
+  addi sp, sp, 256
+  ret
