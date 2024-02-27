@@ -9,7 +9,10 @@ class FuncDefAST : public BaseAST {
     cout << "fun ";
     cout << "@" << ident << "(): ";
     func_type->Dump();
+    cout << "{" << endl;
+    cout << "%" << "entry:" << endl;
     block->Dump();
+    cout << "}" << endl;
   }
   void Dump(int value) const override{}
   void Dump(string &sign) const override {}

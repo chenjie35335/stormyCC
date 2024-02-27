@@ -14,6 +14,27 @@ class ExpAST : public BaseAST {
     }
 };
 
+class SinExpAST : public BaseAST {
+  public:
+    std::unique_ptr<BaseAST> Exp;
+    uint32_t type;
+    void Dump() const override {}
+    void Dump(int value) const override {
+    }
+    void Dump(string &sign) const override {
+      switch(type) {
+          case SINEXPAST_EXP:
+          Exp->Dump(sign); break;
+          case SINEXPAST_NULL:
+          sign = ""; break;
+          default: 
+          assert(0); 
+      }
+    }
+    void Dump(string &sign,string &sign1,string &sign2) const override{}
+    int calc() const override {return 0; }
+};
+
 class LOrExpAST : public BaseAST {
   public:
    std::unique_ptr<BaseAST> LAndExp;
