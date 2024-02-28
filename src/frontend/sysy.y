@@ -496,7 +496,7 @@ IfStmt
     ast->if = unique_ptr<BaseAST> ($1);
     $$           = ast;
   } | MultElseStmt {
-    auto ast = new IfStmt();
+    auto ast = new IfStmtAST();
     ast->if = unique_ptr<BaseAST> ($1);
     $$          = ast;
   }
