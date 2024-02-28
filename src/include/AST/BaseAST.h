@@ -4,7 +4,6 @@
 #include <cassert>
 #include <unordered_map>
 #include <vector>
-#include <ValueTable.h>
 using namespace std;
 #pragma once
 // 所有 AST 的基类
@@ -45,18 +44,14 @@ enum{
   SINVARDEFAST_INI,
   STMTAST_RET,
   STMTAST_LVA,
-  STMTAST_SINE,
-  STMTAST_BLO,
+  SinIfAST_BE,
+  SinIFAST_NO,
   LVALAST_LEFT,
-  LVALAST_RIGHT,
-  SINEXPAST_EXP,
-  SINEXPAST_NULL
+  LVALAST_RIGHT
 }Kind;
 
-extern int ScopeLevel;
-extern IdentTableNode* IdentTable;
-//extern unordered_map<string,int> ValueTable;
-//extern unordered_map<string,int> VarTable;
+extern unordered_map<string,int> ValueTable;
+extern unordered_map<string,int> VarTable;
 static int alloc_now = -1;
 class BaseAST {
  public:
@@ -74,12 +69,8 @@ class CompUnitAST : public BaseAST {
   // 用智能指针管理对象
   std::unique_ptr<BaseAST> func_def;
   void Dump() const override {
-    IdentTable = new IdentTableNode();
-    ScopeLevel = 0;
-    IdentTable->level = ScopeLevel;
     alloc_now = -1;
     func_def->Dump();
-    delete IdentTable;
   }
   void Dump(int value) const override{};
   void Dump(string &sign) const override {}//这两个不需要在此处重载

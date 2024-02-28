@@ -6,7 +6,6 @@ class DeclAST : public BaseAST {
     std::unique_ptr<BaseAST> VarDecl;
     uint32_t type;
     void Dump() const override {
-      //cout<< "declinto" << endl; 
         switch(type) {
             case DECLAST_CON: ConstDecl->Dump(); break;
             case DECLAST_VAR: VarDecl->Dump(); break;
@@ -61,9 +60,6 @@ class SinConstDefAST : public BaseAST{
     string ident;
     unique_ptr<BaseAST>ConstExp;
     void Dump() const override{
-      //cout<< "sinconstdef" << endl;
-      auto &ValueTable = IdentTable->ConstTable;
-      auto &VarTable   = IdentTable->VarTable;
       if(ValueTable.find(ident) != ValueTable.end()) {
         assert(0);
       } 
@@ -108,26 +104,22 @@ public:
     unique_ptr<BaseAST>InitVal;
     uint32_t type;
     void Dump() const override{
-      //cout<< "sinconstdef" << endl;
       int value;
-      auto &ValueTable = IdentTable->ConstTable;
-      auto &VarTable = IdentTable->VarTable;
-      int dep = IdentTable->level;
       if(ValueTable.find(ident) != ValueTable.end()){
           cerr << '"' << ident << '"' << " has been defined as constant" <<endl;
           exit(-1);
       }
-       if(VarTable.find(ident) != VarTable.end()){
+       if(ValueTable.find(ident) != ValueTable.end()){
           cerr << '"' << ident << '"' << " redefined" <<endl;
           exit(-1);
         }
-      cout << "  @"+ident+"_"+to_string(dep) <<" = " << "alloc i32" << endl;
+      cout << "  @"+ident <<" = " << "alloc i32" << endl;
       switch(type) {
         case SINVARDEFAST_UIN: break;
         case SINVARDEFAST_INI:
         {
           value = InitVal->calc();
-          cout << "  store " << value<< ", " << "@"+ident+"_"+to_string(dep)<<endl;
+          cout << "  store " << value<< ", " << "@"+ident<<endl;
           break;
         }
       }

@@ -39,17 +39,17 @@ using namespace std;
 
 // lexer 返回的所有 token 种类的声明
 // 注意 IDENT 和 INT_CONST 会返回 token 的值, 分别对应 str_val 和 int_val
-%token INT RETURN EQ LE GE NE AND OR CONST
+%token INT RETURN EQ LE GE NE AND OR CONST IF ELSE
 %token <str_val> IDENT
-%token <int_val> INT_CONST
+%token <int_val> INT_CONST 
 
 // 非终结符的类型定义
 %type <ast_val> FuncDef FuncType Block Stmt Exp PrimaryExp UnaryExp
 %type <ast_val> UnaryOp AddExp MulExp AddOp MulOp LOrExp LAndExp
 %type <ast_val> EqExp EqOp RelExp RelOp Decl ConstDecl MulConstDef
 %type <ast_val> SinConstDef ConstExp Btype MulBlockItem SinBlockItem LValL LValR
-%type <ast_val> VarDecl SinVarDef MulVarDef InitVal SinExp
-%type <int_val> Number
+%type <ast_val> VarDecl SinVarDef MulVarDef InitVal IfStmt SinIfStmt MultElseStmt
+%type <int_val> Number 
 
 %%
 
@@ -218,9 +218,6 @@ MulBlockItem
     auto ast = (MulBlockItemAST*)($1);
     ast->SinBlockItem.push_back(unique_ptr<BaseAST>($2));
     $$       = ast;
-  } | {
-    auto ast = new MulBlockItemAST();
-    $$       = ast;
   }
   ;
 
@@ -239,9 +236,9 @@ SinBlockItem
   ;
 
 Stmt
-  : RETURN SinExp ';' {
+  : RETURN Exp ';' {
     auto ast = new StmtAST();
-    ast->SinExp = unique_ptr<BaseAST>($2);
+    ast->Exp = unique_ptr<BaseAST>($2);
     ast->type= STMTAST_RET;
     $$       = ast;
   } | LValL '=' Exp ';' {
@@ -250,30 +247,8 @@ Stmt
     ast->Lval= unique_ptr<BaseAST> ($1);
     ast->type= STMTAST_LVA;
     $$       = ast;
-  } | SinExp ';' {
-    auto ast = new StmtAST();
-    ast->SinExp = unique_ptr<BaseAST>($1);
-    ast->type = STMTAST_SINE;
-    $$        = ast;
-  } | Block {
-    auto ast = new StmtAST();
-    ast->Block = unique_ptr<BaseAST>($1);
-    ast->type = STMTAST_BLO;
-    $$        = ast;
   }
   ;
-
-SinExp 
-  : Exp {
-    auto ast = new SinExpAST();
-    ast->Exp = unique_ptr<BaseAST>($1);
-    ast->type = SINEXPAST_EXP;
-    $$ = ast;
-  } | {
-    auto ast = new SinExpAST();
-    ast->type = SINEXPAST_NULL;
-    $$ = ast;
-  }
           
 Exp
   : LOrExp {
@@ -488,7 +463,7 @@ AddOp
     $$       = ast;
   } | '-' {
     auto ast = new AddOpAST();
-    ast->op  = '-';
+    ast->op   = '-';
     $$       = ast;
   }
   ;
@@ -509,8 +484,45 @@ MulOp
   }
   ;
 
+//stmt -> if (Exp) stmt Else  
 
- 
+// Else-> else stmt | ;
+//
+
+//if-else
+IfStmt
+  : SinIfStmt {
+    auto ast =  new IfStmtAST();
+    ast->if = unique_ptr<BaseAST> ($1);
+    $$           = ast;
+  } | MultElseStmt {
+    auto ast = new IfStmt();
+    ast->if = unique_ptr<BaseAST> ($1);
+    $$          = ast;
+  }
+  ;
+
+SinIfStmt
+  : IF '(' Exp ')' Stmt{
+    auto ast = new SinIfstmtAST();
+    ast->exp = unique_ptr<BaseAST> ($3);
+    ast->stmt = unique_ptr<BaseAST> ($5);
+    $$ = ast;
+  }
+  ;
+
+MultElseStmt
+  : IF '(' Exp ')' Stmt ELSE Stmt{
+      auto ast = new MultElseStmtAST();
+      ast->exp = unique_ptr<BaseAST> ($3);
+      ast->if_stmt = unique_ptr<BaseAST> ($5);
+      ast->else_stmt = unique_ptr<BaseAST> ($7);
+      $$ = ast;
+  } 
+  ;
+
+
+
 %%
 
 // 定义错误处理函数, 其中第二个参数是错误信息
@@ -532,3 +544,6 @@ void yyerror(std::unique_ptr<BaseAST> &ast, const char *s) {
     fprintf(stderr, "ERROR: %s at symbol '%s' on line %d\n", s, buf, yylineno);
 
 }
+
+
+
