@@ -64,22 +64,36 @@ class RegisterManager{
             return RegisterAvail[tempReg];
          }
     }
-
+    //这种方法会遇到一个问题：
+    /*
+        1、如果这个rawValue带有两个参数，有没有可能这个rawValue和这两个参数抢资源？
+        2、一个解决办法是我先分配rawValue的资源，然后在这个rawValue上上锁，使得其他参数不得和这个rawValue抢资源
+        同时输出完成之后解锁
+        3、但是有个问题在于：进行寄存器分配的得升入ValueKind,没有办法加锁
+        （貌似只能传this指针了）
+    */
     Register LruAlloc() {
         auto &minRaw = rawValueTable.at(0);
         for(auto &rawValue : rawValueTable) {
-            if(minRaw->used_times >= rawValue->used_times) {
+            if(minRaw->used_times >= rawValue->used_times && rawValue.getStatus == REGISTER) {
                 minRaw = rawValue;
             }
         }
-        minRaw
+        minRaw->store();
+        return minRaw->reg;
     }
+
+    Register X0Alloc() { return this->RegisterAvail[0];}
+    Register A0Alloc() { return this->RegisterAvail[10];}
+
 };
 
 class StackManager{
     public:
     int StackAvailable;//表示现在可用的栈的位置
-    
+    StackManager() {
+        StackAvailable = 0;
+    }
 }
 
 

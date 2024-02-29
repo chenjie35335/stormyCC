@@ -1,8 +1,8 @@
 #include <iostream>
 #include <stdint.h>
 #include <string>
-#include <IrGraph.h>
-#include <ResourceAlloc.h>
+#include "IrGraph.h"
+#include "ResourceAlloc.h"
 using namespace std;
 //原始值，这个是生成asm的关键部分
 enum {
@@ -43,12 +43,16 @@ enum {
 }BinaryOp;
 
 enum {
+    /// @brief 寄存器变量
     REGISTER,
+    /// @brief 内存变量
     MEMORY,
+    /// @brief 未分配
     UNALLOC
 }RawValueStatus;
 
 RegisterManager registerManager;
+StackManager    stackManager;
 //肯定要建立的是原始值和寄存器，内存之间的对应关系
 //建立的方法是
 class RawValue : public midend {
@@ -56,35 +60,61 @@ class RawValue : public midend {
         char *name;
         RawSlice used_by;
         ValueKind* value;
-        int used_times;
+        int used_times = 0;
         Register reg;
         Memory memory;
     private:
-        int Status
+        int Status;
+        bool lock;
         //RawType ty;
-        Resource Visit() {
+        Register Visit() {
             switch(Status) {
-                case REGISTER:
-                    return reg; 
+                case REGISTER://如果该值存在寄存器中，则直接返回Register
                     break;
+                case MEMORY://如果该值直接存在内存当中，需要分配内存
+                    reg = registerManager.AllocRegister(this);
+                    this->Load();
+                    break;
+                case UNALLOC:{
+                    reg    = value->Visit(this);
+                    memory = StackManager.AllocStack();
+                    this->setStatus(REGISTER);
+                    break;
+                }
+                default: assert(0);
             }
+            used_times++;
+            return reg;
         }
 
-        void setStatus(int status){
-            Status = status;
+        void setStatus(int status) { Status = status;}
+        int getStatus() { return Status;}
+        void addLock() { Lock = true;}
+        void leaseLock() { Lock = false;}
+        bool getLock() { return lock;}
+
+        void store() {
+            this->setStatus(MEMORY);
         }
 };
 //各类变量的总父类，作为接口
 class ValueKind {
     public:
-       virtual void Visit(string &sign) const = 0;
+       virtual Register Visit(RawValue *rawValue) const = 0;
 };
 //整型变量
 class RawInteger  : public ValueKind {
     public:
     int32_t value;
-    void Visit() const override {
-        
+    Register Visit(RawValue *rawValue) const override {
+        if(value == 0) {
+            return RegisterManager.X0Alloc();
+        }
+        else {
+            auto reg = RegisterManager.AllocRegister(rawValue);
+            cout << "  li   " << reg.name << " " << integer.value << endl;
+            return reg;
+        }
     }
 };
 //浮点型变量
@@ -99,8 +129,10 @@ class RawFloat : public ValueKind {
 class RawReturn : public ValueKind {
     public:
     RawValue *value;
-    void Visit() const override {
-
+    Register Visit(RawValue *rawValue) const override {
+        auto reg = value->Visit();
+        cout << "  mv   a0, " + reg.name << endl;
+        cout << "  ret" << endl;
     }
 };
 
@@ -110,8 +142,9 @@ class RawBinary : public ValueKind {
     uint32_t op;
     RawValue *lhs;
     RawValue *rhs;
-    void Visit() const override {
-
+    Register Visit(RawValue *rawValue) const override {
+        auto sign = RegisterManager.RegisterManager();
+        rawValue->addLock();
     }
 };
 //读内存
