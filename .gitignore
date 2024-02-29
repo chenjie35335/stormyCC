@@ -1,0 +1,12 @@
+build/
+prj/
+.idea/
+.vscode/
+user/
+*.c
+*.koopa
+*.o
+*.S
+Makefile
+hello
+.md
