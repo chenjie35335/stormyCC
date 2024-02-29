@@ -102,7 +102,7 @@ clean:
 	-rm -rf $(BUILD_DIR)
 
 docker:
-	docker run --privileged -it -v /home/stormy/curricular/compiler/stormyCC:/root/compiler maxxing/compiler-dev bash
+	docker run --privileged -it -v $(TOP_DIR):/root/compiler maxxing/compiler-dev bash
 
 test:
 	make clean
