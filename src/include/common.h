@@ -17,6 +17,7 @@
 #include <OpAST.h>
 #include <StmtAST.h>
 
+#include <ValueTable.h>
 using namespace std;
 #pragma once
 
