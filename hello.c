@@ -25,7 +25,7 @@ int main() {
   // }
   // a = a + 5;
   // return a;
-  int a = 1, sum = 2;
+  int a = 1, sum = 0;
   {
     a = a + 2;
     int b = a + 3;
