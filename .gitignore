@@ -7,6 +7,4 @@ user/
 *.koopa
 *.o
 *.S
-Makefile
 hello
-.md

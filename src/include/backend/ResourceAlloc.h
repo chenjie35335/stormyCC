@@ -14,6 +14,7 @@ class Resource {
     
 };
 
+
 //描述内存
 class Memory : public Resource{
     public:
