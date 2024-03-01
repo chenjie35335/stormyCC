@@ -69,7 +69,7 @@ void Visit(const koopa_raw_binary_t &binary,string &sign) {
         cout << "  seqz " +sign+", "+ sign  <<endl;
         break;
         case KOOPA_RBO_NOT_EQ : 
-//printf("parsing eq\n");
+        //printf("parsing eq\n");
         cout << "  xor  " +s1+", "+ s1 + ", " +s2 <<endl;
         cout << "  snez " +s1+", "+ s1  <<endl;
         sign = s1;

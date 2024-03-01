@@ -67,6 +67,11 @@ class RawValue : public midend {
         int Status;
         bool lock;
         //RawType ty;
+        void Load() {
+            setStatus(REGISTER);
+            cout << "  lw   " << reg.name << ", " <<memory.offset << "(sp)" <<endl; 
+        }
+
         Register Visit() {
             switch(Status) {
                 case REGISTER://如果该值存在寄存器中，则直接返回Register
@@ -86,15 +91,14 @@ class RawValue : public midend {
             used_times++;
             return reg;
         }
-
+        void addLock() { lock = true};
+        void resetlock() { lock = false};
+        bool getlock() { return lock; }
         void setStatus(int status) { Status = status;}
         int getStatus() { return Status;}
-        void addLock() { Lock = true;}
-        void leaseLock() { Lock = false;}
-        bool getLock() { return lock;}
-
         void store() {
             this->setStatus(MEMORY);
+            cout << "  sw   " << reg.name << ", " <<memory.offset << "(sp)" <<endl; 
         }
 };
 //各类变量的总父类，作为接口
@@ -143,16 +147,82 @@ class RawBinary : public ValueKind {
     RawValue *lhs;
     RawValue *rhs;
     Register Visit(RawValue *rawValue) const override {
-        auto sign = RegisterManager.RegisterManager();
-        rawValue->addLock();
+        lhs->addlock();
+        rhs->addlock();
+        auto signl = lhs->Visit();
+        auto signr = rhs->Visit();
+        auto sign = RegisterManager.AllocRegister(rawValue);//给这个值分配了寄存器
+        lhs->resetlock(); rhs->resetlock();
+        switch(op) {
+            case RBO_ADD: 
+            //printf("parsing add\n");
+            cout << "  add  " +sign.name+", "+ signl.name + ", " +signr.name <<endl; 
+            break;
+            case RBO_SUB: 
+            //printf("parsing sub\n");
+            cout << "  sub  " +sign.name+", "+ signl.name + ", " +signr.name <<endl;
+            break;
+            case RBO_EQ : 
+            //printf("parsing eq\n");
+            cout << "  xor  " +sign.name+", "+ signl.name + ", " +signr.name <<endl;
+            cout << "  seqz " +sign.name+", "+ sign.name  <<endl;
+            break;
+            case RBO_NOT_EQ : 
+            //("parsing eq\n");
+            cout << "  xor  " +sign.name+", "+ signl.name + ", " +signr.name <<endl;
+            cout << "  snez " +sign.name+", "+ sign.name  <<endl;
+            break;
+            case RBO_MUL :
+            cout << "  mul  " + sign.name+", "+ signl.name + ", " +signr.name<<endl;
+            break;
+            case RBO_DIV :
+            cout << "  div  " + sign.name+", "+ signl.name + ", " +signr.name << endl;
+            break; 
+            case RBO_MOD :
+            cout << "  rem  " + sign.name+", "+ signl.name + ", " +signr.name << endl;
+            break; 
+            case RBO_LT :
+            cout << "  slt  " + sign.name+", "+ signl.name + ", " +signr.name << endl;
+            break;
+            case RBO_GT :
+            cout << "  slt  " + sign.name + ", " + signr.name + ", "+signl.name << endl;
+            break;
+            case RBO_GE:
+            cout << "  slt  " + sign.name+", "+ signl.name + ", " +signr.name << endl;
+            cout << "  seqz " + sign.name + ", " + sign.name  <<endl;     
+            break;
+            case RBO_LE:
+            cout << "  sgt  " + sign.name+", "+ signl.name + ", " +signr.name << endl;
+            cout << "  seqz " + sign.name + ", " + sign.name  <<endl;     
+            break;
+            case RBO_OR:
+            cout << "  or  " + sign.name+", "+ signl.name + ", " +signr.name << endl;
+            break;
+            case RBO_XOR:
+            cout << "  xor  " + sign.name+", "+ signl.name + ", " +signr.name << endl;
+            break;
+            case RBO_AND:
+            cout << "  and  " + sign.name+", "+ signl.name + ", " +signr.name << endl;
+            break;
+            default:assert(false);            
+        }
     }
 };
-//读内存
+//读内存(这个和之前的rawValue的load不同)
+/*
+    rawValue之后load的结果是将对应的内存load到对应的寄存器上
+    而这里的load是将load的结果load到其他的寄存器上
+*/
 class RawLoad : public ValueKind {
     public:
     RawValue *src;
-    void Visit() const override {
-
+    Register Visit(RawValue *rawValue) const override {
+        assert(src->Status == MEMORY);
+        auto SrcSign = src->Memory;
+        src->addlock();
+        auto sign = RegisterManager.AllocRegister(rawValue);
+        src->resetlock();
+        cout << "  lw   " << sign.name << ", " <<sign2.offset << "(sp)" <<endl;
     }
 };
 //写内存
@@ -160,8 +230,11 @@ class RawStore : public ValueKind {
     public:
     RawValue *value;
     RawValue *dest;
-    void Visit() const override {
-        
+    Register Visit(RawValue *rawValue) const override {
+        assert(dest->Status == MEMORY);
+        auto sign1 = value->Visit();
+        auto sign2 = dest->Memory;
+        cout << "  sw   " << sign1.name << ", " <<sign2.offset << "(sp)" <<endl;
     }
 }
 
