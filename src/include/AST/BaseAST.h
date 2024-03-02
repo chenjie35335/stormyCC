@@ -47,6 +47,7 @@ enum{
   STMTAST_LVA,
   STMTAST_SINE,
   STMTAST_BLO,
+  STMTAST_IF,
   SinIfAST_BE,
   SinIFAST_NO,
   LVALAST_LEFT,
@@ -57,9 +58,12 @@ enum{
 
 extern int ScopeLevel;
 extern IdentTableNode* IdentTable;
+extern int end_br[100];
 //extern unordered_map<string,int> ValueTable;
 //extern unordered_map<string,int> VarTable;
 static int alloc_now = -1;
+static int if_flag_level[200] = {0};
+static int if_level = 0;
 class BaseAST {
  public:
   virtual ~BaseAST() = default;

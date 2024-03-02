@@ -7,6 +7,7 @@ class StmtAST : public BaseAST {
     std::unique_ptr<BaseAST> Exp;
     std::unique_ptr<BaseAST> Lval;
     std::unique_ptr<BaseAST> Block;
+    std::unique_ptr<BaseAST> IfHead;
     uint32_t type;
     void Dump() const override {
       auto p = IdentTable;
@@ -25,6 +26,7 @@ class StmtAST : public BaseAST {
             Lval->Dump(sign1);
             Exp->Dump(sign2);
             int value = Exp->calc();
+            //scope bianli
             while(p != nullptr) {
               auto &ValueTable = p->ConstTable;
               auto &VarTable   = p->VarTable; 
@@ -41,6 +43,7 @@ class StmtAST : public BaseAST {
             }
               p = p->father;
             }
+            //suo you scope zhong mei you zhe ge bian liang jiu shu chu cuo wu
             if(p == nullptr) {
               cerr << '"' << sign1 << "is not defined" << endl;
               exit(-1);
@@ -49,26 +52,29 @@ class StmtAST : public BaseAST {
           }
         case STMTAST_SINE: break;
         case STMTAST_BLO: Block->Dump(); break;
+        case STMTAST_IF: IfHead->Dump(); break;
           default:
               assert(0);
       }
       
     }
-    void Dump(string &sign) const override{}
+    void Dump(string &sign) const override{
+      
+    }
     void Dump(int value) const override{}
     void Dump(string &sign1,string &sign2,string &sign) const override{}
-    [[nodiscard]] int calc() const override{return 0;}
+    [[nodiscard]] int calc() const override{return type;};
 };
 
-
 //非终结符不存在类
-class SinIfstmt : public BaseAST{
+class IfStmtAST : public BaseAST{
   public:
-     std::unique_ptr<BaseAST> exp;
-     std::unique_ptr<BaseAST> stmt;
-
+    std::unique_ptr<BaseAST> if_head_stmt;
      void Dump() const override{
       //add your content
+      //string sign;
+      //cout<<"hello world"<<endl;
+      if_head_stmt->Dump();
      }
 
     void Dump(string &sign) const override{}
@@ -77,16 +83,111 @@ class SinIfstmt : public BaseAST{
     [[nodiscard]] int calc() const override{return 0;}
 };
 
-class MultElseStmt : public BaseAST{
+//非终结符不存在类
+class SinIfStmtAST : public BaseAST{
+  public:
+     std::unique_ptr<BaseAST> exp;
+     std::unique_ptr<BaseAST> stmt;
+     void Dump() const override{
+      //add your content
+      //调用calc接口
+      //确定中间变量
+      //中间变量的定义
+      //must set end in beginning
+      //if(end_br[alloc_now] == 1) return ;
+      string sign1;
+      exp->Dump(sign1);
+      //输出对应中间变量担任名称
+      if(alloc_now < 0) alloc_now = 0;
+      if_flag_level[if_level] = alloc_now;
+      //alloc_now++;
+      cout<<"\tbr %"<<alloc_now<<", %then"<<if_flag_level[if_level]<<", %end"<<if_flag_level[if_level]<<endl;
+      cout<<endl;
+      cout<<"%then"<<if_flag_level[if_level]<<":"<<endl;
+      //完成分支指令同时转移到下一行，中间表达式用数字序号代替
+      if_level++;
+      //执行完if条件跳转，接下来执行stmt中内容
+      stmt->Dump();
+      //cout<<endl;
+      if_level--;
+      //we need judge before jumping end
+      int tmp = stmt->calc();
+      //cout<<"tmp = "<<tmp;
+      cout<<"\tjump %end"<<if_flag_level[if_level]<<endl;
+      //end序列及其序号
+      cout<<endl;
+      cout<<"%end"<<if_flag_level[if_level]<<":"<<endl;
+
+     }
+
+    void Dump(string &sign) const override{}
+    void Dump(int value) const override{}
+    void Dump(string &sign1,string &sign2,string &sign) const override{}
+    [[nodiscard]] int calc() const override{return 20;}
+};
+
+class MultElseStmtAST : public BaseAST{
+  public:
    std::unique_ptr<BaseAST> exp;
    std::unique_ptr<BaseAST> if_stmt;
    std::unique_ptr<BaseAST> else_stmt;
    void Dump() const override{
       //add your content
+      //执行操作基本一直，只不过加了一个对else操作的处理
+      //if(end_br[alloc_now] == 1) retrun ;
+      if(alloc_now < 0) alloc_now = 0;
+      string sign1;
+      exp->Dump(sign1);
+      if_flag_level[if_level] = alloc_now;
+      //alloc_now++;
+      cout<<"\tbr %"<<alloc_now<<", %then"<<if_flag_level[if_level]<<", %else"<<if_flag_level[if_level]<<endl;
+      cout<<endl;
+      cout<<"%then"<<if_flag_level[if_level]<<":"<<endl;
+      if_level++;
+      //执行完if条件跳转，接下来执行if_stmt中内容
+     
+      if_stmt->Dump();
+      if_level--;
+      //cout<<endl;
+     // int tmp1 = if_stmt->calc();
+      cout<<"\tjump %end"<<if_flag_level[if_level]<<endl;
+
+
+      //执行else_stmt序列的内容
+      cout<<endl;
+      cout<<"%else"<<if_flag_level[if_level]<<":"<<endl;
+      if_level++;
+      else_stmt->Dump(); 
+      if_level--;
+      //cout<<endl;
+     // int tmp2 = else_stmt->calc();
+      cout<<"\tjump %end"<<if_flag_level[if_level]<<endl;
+      cout<<endl;
+
+      cout<<"%end"<<if_flag_level[if_level]<<":"<<endl;
+      
+      //错误异常处理退出---不知咋处理，应该可以退出
+      //end终止退出符
+
   }
     void Dump(string &sign) const override{}
     void Dump(int value) const override{}
     void Dump(string &sign1,string &sign2,string &sign) const override{}
-    [[nodiscard]] int calc() const override{return 0;}
+    [[nodiscard]] int calc() const override{ return 0;}
 
+};
+
+//遇到return不继续执行，直接返回
+class If_return : BaseAST{
+  public:
+    std::unique_ptr<BaseAST> if_return_flag;
+    void Dump() const override{
+        if_return_flag->Dump();
+    }
+
+    void Dump(string &sign) const override{}
+    void Dump(int value) const override{}
+    void Dump(string &sign1,string &sign2,string &sign) const override{}
+    [[nodiscard]] int calc() const override{return 7;}
+    //返回7标识return标志
 };
