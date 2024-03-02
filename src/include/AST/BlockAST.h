@@ -27,7 +27,10 @@ class MulBlockItemAST : public BaseAST {
     void Dump() const override{
       for(auto &sinBlockItem : SinBlockItem) {
         sinBlockItem->Dump();
-        if(sinBlockItem->calc() == STMTAST_RET) break;//减支
+        if(sinBlockItem->calc() == STMTAST_RET) {
+            ret_cnt++;
+            break;//减支
+        }
       }
     }
     void Dump(string &sign) const override {} 

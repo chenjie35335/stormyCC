@@ -101,19 +101,31 @@ class SinIfStmtAST : public BaseAST{
       if(alloc_now < 0) alloc_now = 0;
       if_flag_level[if_level] = alloc_now;
       //alloc_now++;
-      cout<<"\tbr %"<<alloc_now<<", %then"<<if_flag_level[if_level]<<", %end"<<if_flag_level[if_level]<<endl;
+      cout<<"\tbr " << sign1 <<", %then"<<if_flag_level[if_level]<<", %end"<<if_flag_level[if_level]<<endl;
       cout<<endl;
       cout<<"%then"<<if_flag_level[if_level]<<":"<<endl;
       //完成分支指令同时转移到下一行，中间表达式用数字序号代替
       if_level++;
+      int tmp = stmt->calc();
       //执行完if条件跳转，接下来执行stmt中内容
       stmt->Dump();
       //cout<<endl;
       if_level--;
       //we need judge before jumping end
-      int tmp = stmt->calc();
+      if(tmp != STMTAST_RET){
+        if(tmp == STMTAST_BLO && ret_cnt == 0){
+            cout<<"\tjump %end"<<if_flag_level[if_level]<<endl;
+        }
+        if(ret_cnt > 0){
+          ret_cnt = 0;
+        } 
+        if(tmp != STMTAST_BLO){
+          cout<<"\tjump %end"<<if_flag_level[if_level]<<endl;
+        }
+      }
+      
       //cout<<"tmp = "<<tmp;
-      cout<<"\tjump %end"<<if_flag_level[if_level]<<endl;
+        
       //end序列及其序号
       cout<<endl;
       cout<<"%end"<<if_flag_level[if_level]<<":"<<endl;
@@ -140,30 +152,50 @@ class MultElseStmtAST : public BaseAST{
       exp->Dump(sign1);
       if_flag_level[if_level] = alloc_now;
       //alloc_now++;
-      cout<<"\tbr %"<<alloc_now<<", %then"<<if_flag_level[if_level]<<", %else"<<if_flag_level[if_level]<<endl;
+      cout<<"\tbr " << sign1 <<", %then"<<if_flag_level[if_level]<<", %else"<<if_flag_level[if_level]<<endl;
       cout<<endl;
       cout<<"%then"<<if_flag_level[if_level]<<":"<<endl;
       if_level++;
       //执行完if条件跳转，接下来执行if_stmt中内容
-     
+      int tmp1 = if_stmt->calc();
       if_stmt->Dump();
       if_level--;
       //cout<<endl;
-     // int tmp1 = if_stmt->calc();
-      cout<<"\tjump %end"<<if_flag_level[if_level]<<endl;
+      if(tmp1 != STMTAST_RET){
+        if(tmp1 == STMTAST_BLO && ret_cnt == 0){
+          cout<<"\tjump %end"<<if_flag_level[if_level]<<endl;
+        }
+        if(ret_cnt > 0){
+          ret_cnt = 0;
+        }
+        if(tmp1 != STMTAST_BLO){
+          cout<<"\tjump %end"<<if_flag_level[if_level]<<endl;
+        }
+      }
+        
 
 
       //执行else_stmt序列的内容
       cout<<endl;
       cout<<"%else"<<if_flag_level[if_level]<<":"<<endl;
       if_level++;
+      int tmp2 = else_stmt->calc();
       else_stmt->Dump(); 
       if_level--;
       //cout<<endl;
-     // int tmp2 = else_stmt->calc();
-      cout<<"\tjump %end"<<if_flag_level[if_level]<<endl;
+      if(tmp2 != STMTAST_RET){
+        if(tmp2 == STMTAST_BLO && ret_cnt == 0){
+          cout<<"\tjump %end"<<if_flag_level[if_level]<<endl;
+        }
+        if(ret_cnt > 0){
+          ret_cnt = 0;
+        }
+        if(tmp2 != STMTAST_BLO){
+          cout<<"\tjump %end"<<if_flag_level[if_level]<<endl;
+        }
+      }
+        
       cout<<endl;
-
       cout<<"%end"<<if_flag_level[if_level]<<":"<<endl;
       
       //错误异常处理退出---不知咋处理，应该可以退出

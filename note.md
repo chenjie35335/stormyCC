@@ -119,3 +119,18 @@ qemu-riscv32-static hello
 riscv程序调试
 详细见：
     [调试 RISC-V 程序](https://pku-minic.github.io/online-doc/#/misc-app-ref/environment)
+
+![alt text](image.png)
+
+目前来看需要完成中端到后端的一个转换
+但是如何完成呢？
+
+首先中端生成的是AST,是一个BaseAST返回的一个语法树，
+但是后端要求的是一个图，这两个该如何转换？
+1、 首先koopa代码的生成还是比较重要的，至少决定了之后要生成的模式是什么样子的。
+2、 从目前来看，我们的目标就是要完成lv5的生成是主要目标
+在lv5及以前，应该只有一个basic block,这样的情况下就是说从func到basic
+block都是树型甚至是线形的，但是value之间存在着图之间的关系
+3、 我的想法是func和basic block按照遍历的规则直接生成，但是对于Value来说，在输出koopa的地方，所有的东西完备，就可以进行输出了
+4、 具体实现的时候，还可能需要一个map记录中间变量的使用，到时候可以直接调用
+5、 但是由于目前不太清楚内存变量的情况，所以这里我们依旧从lv1开始，从表达式一直到后面的常量变量，再到作用域

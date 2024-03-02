@@ -64,6 +64,7 @@ extern int end_br[100];
 static int alloc_now = -1;
 static int if_flag_level[200] = {0};
 static int if_level = 0;
+static int ret_cnt = 0;
 class BaseAST {
  public:
   virtual ~BaseAST() = default;

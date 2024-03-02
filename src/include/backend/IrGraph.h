@@ -9,7 +9,7 @@ enum {
     MemoryValue,
     Unally
 }StorageType;
-
+//中端代码需要使用！
 class midend {
     public:
         virtual void Visit() const = 0;
