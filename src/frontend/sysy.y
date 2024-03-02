@@ -260,7 +260,44 @@ Stmt
     ast->Block = unique_ptr<BaseAST>($1);
     ast->type = STMTAST_BLO;
     $$        = ast;
+  } | IfStmt {
+    auto ast = new StmtAST();
+    ast->IfHead = unique_ptr<BaseAST>($1);
+    ast->type = STMTAST_IF;
+    $$        = ast;
   }
+  ;
+
+//if-else
+IfStmt
+  : SinIfStmt {
+    auto ast =  new IfStmtAST();
+    ast->if_head_stmt = unique_ptr<BaseAST> ($1);
+    $$           = ast;
+  } | MultElseStmt {
+    auto ast = new IfStmtAST();
+    ast->if_head_stmt = unique_ptr<BaseAST> ($1);
+    $$          = ast;
+  }
+  ;
+
+SinIfStmt
+  : IF '(' Exp ')' Stmt { 
+    auto ast = new SinIfStmtAST();
+    ast->exp = unique_ptr<BaseAST> ($3);
+    ast->stmt = unique_ptr<BaseAST> ($5);
+    $$ = ast;
+  }
+  ;
+
+MultElseStmt
+  : IF '(' Exp ')' Stmt ELSE Stmt {
+      auto ast = new MultElseStmtAST();
+      ast->exp = unique_ptr<BaseAST> ($3);
+      ast->if_stmt = unique_ptr<BaseAST> ($5);
+      ast->else_stmt = unique_ptr<BaseAST> ($7);
+      $$ = ast;
+  } 
   ;
 
 SinExp 
@@ -514,37 +551,7 @@ MulOp
 // Else-> else stmt | ;
 //
 
-//if-else
-IfStmt
-  : SinIfStmt {
-    auto ast =  new IfStmtAST();
-    ast->if = unique_ptr<BaseAST> ($1);
-    $$           = ast;
-  } | MultElseStmt {
-    auto ast = new IfStmtAST();
-    ast->if = unique_ptr<BaseAST> ($1);
-    $$          = ast;
-  }
-  ;
 
-SinIfStmt
-  : IF '(' Exp ')' Stmt{
-    auto ast = new SinIfstmtAST();
-    ast->exp = unique_ptr<BaseAST> ($3);
-    ast->stmt = unique_ptr<BaseAST> ($5);
-    $$ = ast;
-  }
-  ;
-
-MultElseStmt
-  : IF '(' Exp ')' Stmt ELSE Stmt{
-      auto ast = new MultElseStmtAST();
-      ast->exp = unique_ptr<BaseAST> ($3);
-      ast->if_stmt = unique_ptr<BaseAST> ($5);
-      ast->else_stmt = unique_ptr<BaseAST> ($7);
-      $$ = ast;
-  } 
-  ;
 
 
 

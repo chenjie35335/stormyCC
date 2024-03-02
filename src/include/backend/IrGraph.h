@@ -1,7 +1,7 @@
 #include <string>
 #include <iostream>
 #include <vector>
-#include <ValueKind.h>
+#include "ValueKind.h"
 using namespace std;
 //这个是所有中端表示的接口
 enum {
@@ -12,7 +12,6 @@ enum {
 
 class midend {
     public:
-        static int StackOffset;
         virtual void Visit() const = 0;
 };  
 //这个用来表示源程序
@@ -46,7 +45,6 @@ class RawFunction : public midend{
             cout << "  .global " << name+1 << endl;
             cout << name+1 << ":" << endl;
             cout << "  addi sp, sp, -256" <<  endl;
-            StackOffset = 0;
             bbs.Visit();
         }
 };

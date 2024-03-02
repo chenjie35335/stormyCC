@@ -26,6 +26,7 @@ class StmtAST : public BaseAST {
             Lval->Dump(sign1);
             Exp->Dump(sign2);
             int value = Exp->calc();
+            //scope bianli
             while(p != nullptr) {
               auto &ValueTable = p->ConstTable;
               auto &VarTable   = p->VarTable; 
@@ -42,6 +43,7 @@ class StmtAST : public BaseAST {
             }
               p = p->father;
             }
+            //suo you scope zhong mei you zhe ge bian liang jiu shu chu cuo wu
             if(p == nullptr) {
               cerr << '"' << sign1 << "is not defined" << endl;
               exit(-1);
@@ -61,9 +63,8 @@ class StmtAST : public BaseAST {
     }
     void Dump(int value) const override{}
     void Dump(string &sign1,string &sign2,string &sign) const override{}
-    [[nodiscard]] int calc() const override{return 0;}
+    [[nodiscard]] int calc() const override{return type;};
 };
-
 
 //非终结符不存在类
 class IfStmtAST : public BaseAST{
@@ -98,20 +99,24 @@ class SinIfStmtAST : public BaseAST{
       exp->Dump(sign1);
       //输出对应中间变量担任名称
       if(alloc_now < 0) alloc_now = 0;
+      if_flag_level[if_level] = alloc_now;
       //alloc_now++;
-      cout<<"\tbr %"<<alloc_now<<", %then"<<if_flag<<", %end"<<if_flag<<endl;
+      cout<<"\tbr %"<<alloc_now<<", %then"<<if_flag_level[if_level]<<", %end"<<if_flag_level[if_level]<<endl;
       cout<<endl;
-      cout<<"%then"<<if_flag<<":"<<endl;
+      cout<<"%then"<<if_flag_level[if_level]<<":"<<endl;
       //完成分支指令同时转移到下一行，中间表达式用数字序号代替
-      
+      if_level++;
       //执行完if条件跳转，接下来执行stmt中内容
       stmt->Dump();
       //cout<<endl;
-      cout<<"\tjump %end"<<if_flag<<endl;
+      if_level--;
+      //we need judge before jumping end
+      int tmp = stmt->calc();
+      //cout<<"tmp = "<<tmp;
+      cout<<"\tjump %end"<<if_flag_level[if_level]<<endl;
       //end序列及其序号
       cout<<endl;
-      cout<<"%end"<<if_flag<<":"<<endl;
-      if_flag++;
+      cout<<"%end"<<if_flag_level[if_level]<<":"<<endl;
 
      }
 
@@ -133,28 +138,34 @@ class MultElseStmtAST : public BaseAST{
       if(alloc_now < 0) alloc_now = 0;
       string sign1;
       exp->Dump(sign1);
+      if_flag_level[if_level] = alloc_now;
       //alloc_now++;
-      cout<<"\tbr %"<<alloc_now<<", %then"<<if_flag<<", %else"<<if_flag<<endl;
+      cout<<"\tbr %"<<alloc_now<<", %then"<<if_flag_level[if_level]<<", %else"<<if_flag_level[if_level]<<endl;
       cout<<endl;
-      cout<<"%then"<<if_flag<<":"<<endl;
-
+      cout<<"%then"<<if_flag_level[if_level]<<":"<<endl;
+      if_level++;
       //执行完if条件跳转，接下来执行if_stmt中内容
      
       if_stmt->Dump();
+      if_level--;
       //cout<<endl;
-      cout<<"\tjump %end"<<if_flag<<endl;
+     // int tmp1 = if_stmt->calc();
+      cout<<"\tjump %end"<<if_flag_level[if_level]<<endl;
 
 
       //执行else_stmt序列的内容
       cout<<endl;
-      cout<<"%else"<<if_flag<<":"<<endl;
+      cout<<"%else"<<if_flag_level[if_level]<<":"<<endl;
+      if_level++;
       else_stmt->Dump(); 
+      if_level--;
       //cout<<endl;
-      cout<<"\tjump %end"<<if_flag<<endl;
+     // int tmp2 = else_stmt->calc();
+      cout<<"\tjump %end"<<if_flag_level[if_level]<<endl;
       cout<<endl;
 
-      cout<<"%end"<<if_flag<<":"<<endl;
-      if_flag++;
+      cout<<"%end"<<if_flag_level[if_level]<<":"<<endl;
+      
       //错误异常处理退出---不知咋处理，应该可以退出
       //end终止退出符
 
@@ -162,7 +173,7 @@ class MultElseStmtAST : public BaseAST{
     void Dump(string &sign) const override{}
     void Dump(int value) const override{}
     void Dump(string &sign1,string &sign2,string &sign) const override{}
-    [[nodiscard]] int calc() const override{return 0;}
+    [[nodiscard]] int calc() const override{ return 0;}
 
 };
 

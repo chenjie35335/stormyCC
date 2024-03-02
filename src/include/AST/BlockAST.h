@@ -27,6 +27,7 @@ class MulBlockItemAST : public BaseAST {
     void Dump() const override{
       for(auto &sinBlockItem : SinBlockItem) {
         sinBlockItem->Dump();
+        if(sinBlockItem->calc() == STMTAST_RET) break;//减支
       }
     }
     void Dump(string &sign) const override {} 
@@ -52,5 +53,11 @@ class SinBlockItemAST : public BaseAST {
     void Dump(string &sign) const override {} 
     void Dump(int value) const override{}
     void Dump(string &sign1,string &sign2,string &sign) const override{}
-    [[nodiscard]] int calc() const override{return 0;}
+    [[nodiscard]] int calc() const override{
+      switch(type) {
+        case SINBLOCKITEM_DEC: return 0; break;
+        case SINBLOCKITEM_STM: return stmt->calc(); break;//这里调用calc实际上返回的是stmt的类型值
+        default: assert(0);
+        }
+    }
 };

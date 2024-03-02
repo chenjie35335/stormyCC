@@ -1,8 +1,8 @@
 #include <iostream>
 #include <stdint.h>
 #include <string>
-#include <IrGraph.h>
-#include <ResourceAlloc.h>
+#include "IrGraph.h"
+#include "ResourceAlloc.h"
 using namespace std;
 //原始值，这个是生成asm的关键部分
 enum {
@@ -43,12 +43,16 @@ enum {
 }BinaryOp;
 
 enum {
+    /// @brief 寄存器变量
     REGISTER,
+    /// @brief 内存变量
     MEMORY,
+    /// @brief 未分配
     UNALLOC
 }RawValueStatus;
 
 RegisterManager registerManager;
+StackManager    stackManager;
 //肯定要建立的是原始值和寄存器，内存之间的对应关系
 //建立的方法是
 class RawValue : public midend {
@@ -56,35 +60,65 @@ class RawValue : public midend {
         char *name;
         RawSlice used_by;
         ValueKind* value;
-        int used_times;
+        int used_times = 0;
         Register reg;
         Memory memory;
     private:
-        int Status
+        int Status;
+        bool lock;
         //RawType ty;
-        Resource Visit() {
-            switch(Status) {
-                case REGISTER:
-                    return reg; 
-                    break;
-            }
+        void Load() {
+            setStatus(REGISTER);
+            cout << "  lw   " << reg.name << ", " <<memory.offset << "(sp)" <<endl; 
         }
 
-        void setStatus(int status){
-            Status = status;
+        Register Visit() {
+            switch(Status) {
+                case REGISTER://如果该值存在寄存器中，则直接返回Register
+                    break;
+                case MEMORY://如果该值直接存在内存当中，需要分配内存
+                    reg = registerManager.AllocRegister(this);
+                    this->Load();
+                    break;
+                case UNALLOC:{
+                    reg    = value->Visit(this);
+                    memory = StackManager.AllocStack();
+                    this->setStatus(REGISTER);
+                    break;
+                }
+                default: assert(0);
+            }
+            used_times++;
+            return reg;
+        }
+        void addLock() { lock = true};
+        void resetlock() { lock = false};
+        bool getlock() { return lock; }
+        void setStatus(int status) { Status = status;}
+        int getStatus() { return Status;}
+        void store() {
+            this->setStatus(MEMORY);
+            cout << "  sw   " << reg.name << ", " <<memory.offset << "(sp)" <<endl; 
         }
 };
 //各类变量的总父类，作为接口
 class ValueKind {
     public:
-       virtual void Visit(string &sign) const = 0;
+       virtual Register Visit(RawValue *rawValue) const = 0;
 };
 //整型变量
 class RawInteger  : public ValueKind {
     public:
     int32_t value;
-    void Visit() const override {
-        
+    Register Visit(RawValue *rawValue) const override {
+        if(value == 0) {
+            return RegisterManager.X0Alloc();
+        }
+        else {
+            auto reg = RegisterManager.AllocRegister(rawValue);
+            cout << "  li   " << reg.name << " " << integer.value << endl;
+            return reg;
+        }
     }
 };
 //浮点型变量
@@ -99,8 +133,10 @@ class RawFloat : public ValueKind {
 class RawReturn : public ValueKind {
     public:
     RawValue *value;
-    void Visit() const override {
-
+    Register Visit(RawValue *rawValue) const override {
+        auto reg = value->Visit();
+        cout << "  mv   a0, " + reg.name << endl;
+        cout << "  ret" << endl;
     }
 };
 
@@ -110,16 +146,83 @@ class RawBinary : public ValueKind {
     uint32_t op;
     RawValue *lhs;
     RawValue *rhs;
-    void Visit() const override {
-
+    Register Visit(RawValue *rawValue) const override {
+        lhs->addlock();
+        rhs->addlock();
+        auto signl = lhs->Visit();
+        auto signr = rhs->Visit();
+        auto sign = RegisterManager.AllocRegister(rawValue);//给这个值分配了寄存器
+        lhs->resetlock(); rhs->resetlock();
+        switch(op) {
+            case RBO_ADD: 
+            //printf("parsing add\n");
+            cout << "  add  " +sign.name+", "+ signl.name + ", " +signr.name <<endl; 
+            break;
+            case RBO_SUB: 
+            //printf("parsing sub\n");
+            cout << "  sub  " +sign.name+", "+ signl.name + ", " +signr.name <<endl;
+            break;
+            case RBO_EQ : 
+            //printf("parsing eq\n");
+            cout << "  xor  " +sign.name+", "+ signl.name + ", " +signr.name <<endl;
+            cout << "  seqz " +sign.name+", "+ sign.name  <<endl;
+            break;
+            case RBO_NOT_EQ : 
+            //("parsing eq\n");
+            cout << "  xor  " +sign.name+", "+ signl.name + ", " +signr.name <<endl;
+            cout << "  snez " +sign.name+", "+ sign.name  <<endl;
+            break;
+            case RBO_MUL :
+            cout << "  mul  " + sign.name+", "+ signl.name + ", " +signr.name<<endl;
+            break;
+            case RBO_DIV :
+            cout << "  div  " + sign.name+", "+ signl.name + ", " +signr.name << endl;
+            break; 
+            case RBO_MOD :
+            cout << "  rem  " + sign.name+", "+ signl.name + ", " +signr.name << endl;
+            break; 
+            case RBO_LT :
+            cout << "  slt  " + sign.name+", "+ signl.name + ", " +signr.name << endl;
+            break;
+            case RBO_GT :
+            cout << "  slt  " + sign.name + ", " + signr.name + ", "+signl.name << endl;
+            break;
+            case RBO_GE:
+            cout << "  slt  " + sign.name+", "+ signl.name + ", " +signr.name << endl;
+            cout << "  seqz " + sign.name + ", " + sign.name  <<endl;     
+            break;
+            case RBO_LE:
+            cout << "  sgt  " + sign.name+", "+ signl.name + ", " +signr.name << endl;
+            cout << "  seqz " + sign.name + ", " + sign.name  <<endl;     
+            break;
+            case RBO_OR:
+            cout << "  or  " + sign.name+", "+ signl.name + ", " +signr.name << endl;
+            break;
+            case RBO_XOR:
+            cout << "  xor  " + sign.name+", "+ signl.name + ", " +signr.name << endl;
+            break;
+            case RBO_AND:
+            cout << "  and  " + sign.name+", "+ signl.name + ", " +signr.name << endl;
+            break;
+            default:assert(false);            
+        }
     }
 };
-//读内存
+//读内存(这个和之前的rawValue的load不同)
+/*
+    rawValue之后load的结果是将对应的内存load到对应的寄存器上
+    而这里的load是将load的结果load到其他的寄存器上
+*/
 class RawLoad : public ValueKind {
     public:
     RawValue *src;
-    void Visit() const override {
-
+    Register Visit(RawValue *rawValue) const override {
+        assert(src->Status == MEMORY);
+        auto SrcSign = src->Memory;
+        src->addlock();
+        auto sign = RegisterManager.AllocRegister(rawValue);
+        src->resetlock();
+        cout << "  lw   " << sign.name << ", " <<sign2.offset << "(sp)" <<endl;
     }
 };
 //写内存
@@ -127,8 +230,11 @@ class RawStore : public ValueKind {
     public:
     RawValue *value;
     RawValue *dest;
-    void Visit() const override {
-        
+    Register Visit(RawValue *rawValue) const override {
+        assert(dest->Status == MEMORY);
+        auto sign1 = value->Visit();
+        auto sign2 = dest->Memory;
+        cout << "  sw   " << sign1.name << ", " <<sign2.offset << "(sp)" <<endl;
     }
 }
 
