@@ -18,6 +18,16 @@ class FuncDefAST : public BaseAST {
   void Dump(string &sign) const override {}
   void Dump(string &sign1,string &sign2,string &sign) const override{}
   [[nodiscard]] int calc() const override{return 0;}
+  void generateRawProgramme(midend* &mid) const override{
+      auto Function = new RawFunction(ident);
+      auto &rawSlice = (RawSlice *) mid;
+      rawSlice->buffer.push_back(Function);
+      auto &FuncBBS = Function->bbs;
+      FuncBBS = new RawSlice();
+      auto BasicBlock = new RawBasicBlock();
+      FuncBBS->buffer.push_back(BasicBlock);
+      block->generateRawProgramme(BasicBlock);
+  }
 };
 
 class FuncTypeAST : public BaseAST {
@@ -30,4 +40,5 @@ class FuncTypeAST : public BaseAST {
     void Dump(string &sign) const override {}
     void Dump(string &sign1,string &sign2,string &sign) const override{}
     [[nodiscard]] int calc() const override{return 0;}
+    void generateRawProgramme(midend* &mid) const override {}
 };

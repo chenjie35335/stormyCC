@@ -4,6 +4,7 @@ using namespace std;
 extern FILE *yyin;
 extern int yyparse(unique_ptr<BaseAST> &ast);
 extern void backend(char *string,const char *output);
+extern void backend_f(unique_ptr<BaseAST> &ast);
 
 int main2(int argc, const char *argv[]) {
   // 解析命令行参数. 测试脚本/评测平台要求你的编译器能接收如下参数:
@@ -23,17 +24,13 @@ int main2(int argc, const char *argv[]) {
   unique_ptr<BaseAST> ast;
   auto ret = yyparse(ast);
   assert(!ret);
-
+  freopen(output,"w",stdout);
   // 输出解析得到的 AST, 其实就是个字符串
   if(strcmp(mode,"-koopa") == 0) {
-  freopen(output,"w",stdout);
-  ast->Dump();
+    ast->Dump();
   }
   if(strcmp(mode,"-riscv") == 0){
-    std::FILE* f = fopen(output,"r");
-    char * str = (char *) malloc(sizeof(char) * 100000);
-    fread(str,sizeof(char),100000,f);
-    backend(str,output);
+    backend_f(ast);
   }
   return 0;
 }

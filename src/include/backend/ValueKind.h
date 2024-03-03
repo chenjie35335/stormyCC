@@ -4,6 +4,7 @@
 #include "IrGraph.h"
 #include "ResourceAlloc.h"
 using namespace std;
+#pragma once
 //原始值，这个是生成asm的关键部分
 enum {
     /// Not equal to.
@@ -61,8 +62,8 @@ class RawValue : public midend {
         RawSlice used_by;
         ValueKind* value;
         int used_times = 0;
-        Register reg;
-        Memory memory;
+        Register reg;//存储的寄存器地址
+        Memory memory;//存储的内存地址
     private:
         int Status;
         bool lock;
@@ -208,11 +209,21 @@ class RawBinary : public ValueKind {
         }
     }
 };
+
+class RawAlloc : public ValueKind {
+    public:
+        Register Visit(RawValue * rawValue) const override {
+            RawValue->memory =StackManager.AllocStack();
+            Register reg;
+            return reg;
+        }
+};
 //读内存(这个和之前的rawValue的load不同)
 /*
     rawValue之后load的结果是将对应的内存load到对应的寄存器上
     而这里的load是将load的结果load到其他的寄存器上
 */
+//load类型
 class RawLoad : public ValueKind {
     public:
     RawValue *src;

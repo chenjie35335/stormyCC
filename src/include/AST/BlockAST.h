@@ -19,6 +19,18 @@ class BlockAST : public BaseAST {
     void Dump(int value) const override{}
     void Dump(string &sign1,string &sign2,string &sign) const override{}
     [[nodiscard]] int calc() const override{return 0;}
+    void generateRawProgramme(midend* &mid) {
+      auto BlockScope = new IdentTableNode();
+      ScopeLevel++;
+      BlockScope->father = IdentTable;
+      BlockScope->level  = ScopeLevel;
+      IdentTable->child  = BlockScope;
+      IdentTable = IdentTable->child;
+      MulBlockItem->generateRawProgramme(mid);
+      IdentTable = IdentTable->father;
+      IdentTable->child = NULL;
+      delete BlockScope;
+    }
 };
 
 class MulBlockItemAST : public BaseAST {
@@ -37,7 +49,20 @@ class MulBlockItemAST : public BaseAST {
     void Dump(int value) const override{}
     void Dump(string &sign1,string &sign2,string &sign) const override{}
     [[nodiscard]] int calc() const override{return 0;}
+    void generateRawProgramme(midend* &mid){
+        auto &rawBasicBlock = (RawBasicBlock *)mid;
+        mid->insts = new RawSlice();
+        auto &insts = mid->insts;
+        for(auto &sinBlockItem : SinBlockItem) {
+          sinBlockItem->generateRawProgramme(insts);
+          if(sinBlockItem->calc() == STMTAST_RET) {
+              ret_cnt++;
+              break;//减支
+          }
+        }      
+    }
 };
+
 //单个block生成一个作用域
 class SinBlockItemAST : public BaseAST {
   public:
@@ -63,4 +88,13 @@ class SinBlockItemAST : public BaseAST {
         default: assert(0);
         }
     }
+    void generateRawProgramme(midend* &mid){
+      switch(type) {
+        case SINBLOCKITEM_DEC: 
+        decl->generateRawProgramme(mid);break;
+        case SINBLOCKITEM_STM: 
+        stmt->generateRawProgramme(mid);break;
+        default:assert(0);
+      }                                    
+  }
 };

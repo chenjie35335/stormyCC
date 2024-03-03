@@ -4,7 +4,8 @@
 #include <cassert>
 #include <unordered_map>
 #include <vector>
-#include <ValueTable.h>
+#include "../ValueTable/ValueTable.h"
+#include "../Backend.h"//这里代码的耦合性过于明显，到时候可能需要重构
 using namespace std;
 #pragma once
 // 所有 AST 的基类
@@ -15,6 +16,7 @@ using namespace std;
   2. 对于分类的名称，为了方便，除PrimaryExp外，需要改动
   3. 取用每种匹配方式的前三个字符的大写作为分类方式
 */
+
 enum{
   UNARYEXP,
   LVAL,
@@ -65,6 +67,7 @@ static int alloc_now = -1;
 static int if_flag_level[200] = {0};
 static int if_level = 0;
 static int ret_cnt = 0;
+unordered_map <string, RawValue> rawValueTable;
 class BaseAST {
  public:
   virtual ~BaseAST() = default;
@@ -74,6 +77,7 @@ class BaseAST {
   //这个用来带有双目运算符的遍历
   virtual void Dump(int value) const = 0; // 这个用来传递整形变量
   [[nodiscard]] virtual int calc() const = 0;//计算表达式的值
+  virtual void generateRawProgramme(midend* &mid) const = 0;
 };
 // CompUnit 是 BaseAST
 class CompUnitAST : public BaseAST {
@@ -92,6 +96,18 @@ class CompUnitAST : public BaseAST {
   void Dump(string &sign) const override {}//这两个不需要在此处重载
   void Dump(string &sign1,string &sign2,string &sign) const override{}
   [[nodiscard]] int calc() const override{return 0;}
+  void generateRawProgramme(midend* &mid) const override {
+      //生成作用域
+      IdentTable = new IdentTableNode();
+      ScopeLevel = 0;
+      IdentTable->level = ScopeLevel;
+      alloc_now = -1;
+      //生成RawProgramme
+      mid = new RawProgramme();
+      mid->Funcs = =new RawSlice();
+      func_def->generateRawProgramme(mid->Funcs);
+      delete IdentTable;
+  }
 };
 
 // FuncDef 也是 BaseAST

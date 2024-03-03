@@ -1,0 +1,8 @@
+#include "AST/BaseAST.h"
+#include "AST/BlockAST.h"
+#include "AST/DeclAST.h"
+#include "AST/ExpAST.h"
+#include "AST/FuncAST.h"
+#include "AST/LValAST.h"
+#include "AST/OpAST.h"
+#include "AST/StmtAST.h"
