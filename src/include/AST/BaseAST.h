@@ -48,6 +48,10 @@ enum{
   STMTAST_SINE,
   STMTAST_BLO,
   STMTAST_IF,
+  STMTAST_WHILE,
+  STMTAST_BREAK,
+  STMTAST_CONTINUE,
+  STMTAST_INWHILE,
   SinIfAST_BE,
   SinIFAST_NO,
   LVALAST_LEFT,
@@ -65,6 +69,10 @@ static int alloc_now = -1;
 static int if_flag_level[200] = {0};
 static int if_level = 0;
 static int ret_cnt = 0;
+static int record_while[100] = {0};
+static int while_level = 0;
+static int break_cnt = 0;
+static int continue_cnt = 0;
 class BaseAST {
  public:
   virtual ~BaseAST() = default;
@@ -95,11 +103,7 @@ class CompUnitAST : public BaseAST {
 };
 
 // FuncDef 也是 BaseAST
-
 //这里就是返回值的问题，但是这里考虑可以把返回值设为string,直接将常数改为string返回就可以了
-
-
-
 //对于OP类型的，如果是enum表示的type,返回type值，如果直接存储运算符，则返回运算符的值
 
 

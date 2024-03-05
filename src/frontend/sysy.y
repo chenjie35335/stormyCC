@@ -39,7 +39,7 @@ using namespace std;
 
 // lexer 返回的所有 token 种类的声明
 // 注意 IDENT 和 INT_CONST 会返回 token 的值, 分别对应 str_val 和 int_val
-%token INT RETURN EQ LE GE NE AND OR CONST IF ELSE
+%token INT RETURN EQ LE GE NE AND OR CONST IF ELSE WHILE BREAK CONTINUE
 %token <str_val> IDENT
 %token <int_val> INT_CONST 
 
@@ -48,7 +48,7 @@ using namespace std;
 %type <ast_val> UnaryOp AddExp MulExp AddOp MulOp LOrExp LAndExp
 %type <ast_val> EqExp EqOp RelExp RelOp Decl ConstDecl MulConstDef
 %type <ast_val> SinConstDef ConstExp Btype MulBlockItem SinBlockItem LValL LValR
-%type <ast_val> VarDecl SinVarDef MulVarDef InitVal SinExp IfStmt SinIfStmt MultElseStmt
+%type <ast_val> VarDecl SinVarDef MulVarDef InitVal SinExp IfStmt SinIfStmt MultElseStmt WhileStmt WhileStmtHead InWhile
 %type <int_val> Number 
 
 %%
@@ -265,6 +265,16 @@ Stmt
     ast->IfHead = unique_ptr<BaseAST>($1);
     ast->type = STMTAST_IF;
     $$        = ast;
+  } | WhileStmtHead {
+    auto ast = new StmtAST();
+    ast->WhileHead = unique_ptr<BaseAST>($1);
+    ast->type = STMTAST_WHILE;
+    $$        = ast;
+  } | InWhile {
+    auto ast = new StmtAST();
+    ast->InWhileStmt = unique_ptr<BaseAST>($1);
+    ast->type = STMTAST_INWHILE;
+    $$        = ast;
   }
   ;
 
@@ -299,6 +309,34 @@ MultElseStmt
       $$ = ast;
   } 
   ;
+
+WhileStmtHead
+  : WhileStmt {
+    auto ast = new WhileStmtHeadAST();
+    ast->WhileHead = unique_ptr<BaseAST> ($1);
+    ast->type = STMTAST_WHILE;
+  }
+  ;
+
+WhileStmt
+  : WHILE '(' Exp ')' Stmt{
+    auto ast = new WhileStmtAST();
+    ast->exp = unique_ptr<BaseAST> ($3);
+    ast->stmt = unique_ptr<BaseAST> ($5);
+    $$ = ast;
+  }
+  ;
+
+InWhile
+  : CONTINUE ';'{
+    auto ast = new InWhileAST();
+    ast->type = STMTAST_CONTINUE;
+    $$ = ast;
+  } | BREAK ';'  {
+    auto ast = new InWhileAST();
+    ast->type = STMTAST_BREAK;
+    $$ = ast;
+  }
 
 SinExp 
   : Exp {

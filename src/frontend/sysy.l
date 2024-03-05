@@ -46,7 +46,10 @@ Hexadecimal   0[xX][0-9a-fA-F]+
 "||"            { return OR; }
 "if"            { return IF; }
 "else"          { return ELSE; }
-"const"         { return CONST;}
+"const"         { return CONST; }
+"while"         { return WHILE; }
+"break"         { return BREAK; }
+"continue"      { return CONTINUE; }
 
 
 {Identifier}    { yylval.str_val = new string(yytext); return IDENT; }

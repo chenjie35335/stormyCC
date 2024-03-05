@@ -8,6 +8,8 @@ class StmtAST : public BaseAST {
     std::unique_ptr<BaseAST> Lval;
     std::unique_ptr<BaseAST> Block;
     std::unique_ptr<BaseAST> IfHead;
+    std::unique_ptr<BaseAST> WhileHead;
+    std::unique_ptr<BaseAST> InWhileStmt;
     uint32_t type;
     void Dump() const override {
       auto p = IdentTable;
@@ -15,6 +17,7 @@ class StmtAST : public BaseAST {
       //auto& VarTable   = IdentTable->VarTable;
       
       string sign;
+      if(break_cnt == 0 && continue_cnt == 0){
       switch(type) {
           case STMTAST_RET:
               SinExp->Dump(sign);
@@ -53,9 +56,13 @@ class StmtAST : public BaseAST {
         case STMTAST_SINE: break;
         case STMTAST_BLO: Block->Dump(); break;
         case STMTAST_IF: IfHead->Dump(); break;
+        case STMTAST_WHILE: WhileHead->Dump(); break;
+        case STMTAST_INWHILE: InWhileStmt->Dump(); break;
+        
           default:
               assert(0);
-      }
+      } 
+    } 
       
     }
     void Dump(string &sign) const override{
@@ -113,13 +120,16 @@ class SinIfStmtAST : public BaseAST{
       if_level--;
       //we need judge before jumping end
       if(tmp != STMTAST_RET){
-        if(tmp == STMTAST_BLO && ret_cnt == 0){
+        if(tmp == STMTAST_BLO && ret_cnt == 0 && break_cnt == 0 && continue_cnt == 0){
+          //cout<<"continue_cnt"<<continue_cnt<<endl;
             cout<<"\tjump %end"<<if_flag_level[if_level]<<endl;
         }
-        if(ret_cnt > 0){
+        if(ret_cnt > 0 || break_cnt > 0 || continue_cnt > 0){
           ret_cnt = 0;
+          break_cnt = 0;
+          continue_cnt = 0;
         } 
-        if(tmp != STMTAST_BLO){
+        if(tmp != STMTAST_BLO && tmp != STMTAST_BREAK && tmp != STMTAST_CONTINUE && tmp != STMTAST_INWHILE){
           cout<<"\tjump %end"<<if_flag_level[if_level]<<endl;
         }
       }
@@ -161,19 +171,24 @@ class MultElseStmtAST : public BaseAST{
       if_stmt->Dump();
       if_level--;
       //cout<<endl;
+
+      //break and continue in if else we need fix
+      //single if is already fixed
+
       if(tmp1 != STMTAST_RET){
-        if(tmp1 == STMTAST_BLO && ret_cnt == 0){
+        if(tmp1 == STMTAST_BLO && ret_cnt == 0 && break_cnt == 0 && continue_cnt == 0){
           cout<<"\tjump %end"<<if_flag_level[if_level]<<endl;
         }
-        if(ret_cnt > 0){
+        if(ret_cnt > 0 || break_cnt > 0 || continue_cnt > 0){
           ret_cnt = 0;
+          break_cnt = 0;
+          continue_cnt = 0;
         }
-        if(tmp1 != STMTAST_BLO){
+        if(tmp1 != STMTAST_BLO && tmp1 != STMTAST_INWHILE && tmp1 != STMTAST_BREAK && tmp1 != STMTAST_CONTINUE){
           cout<<"\tjump %end"<<if_flag_level[if_level]<<endl;
         }
       }
         
-
 
       //执行else_stmt序列的内容
       cout<<endl;
@@ -184,13 +199,15 @@ class MultElseStmtAST : public BaseAST{
       if_level--;
       //cout<<endl;
       if(tmp2 != STMTAST_RET){
-        if(tmp2 == STMTAST_BLO && ret_cnt == 0){
+        if(tmp2 == STMTAST_BLO && ret_cnt == 0 && break_cnt == 0 && continue_cnt == 0){
           cout<<"\tjump %end"<<if_flag_level[if_level]<<endl;
         }
-        if(ret_cnt > 0){
+        if(ret_cnt > 0 || break_cnt > 0 || continue_cnt > 0){
           ret_cnt = 0;
+          break_cnt = 0;
+          continue_cnt = 0;
         }
-        if(tmp2 != STMTAST_BLO){
+        if(tmp2 != STMTAST_BLO && tmp2 != STMTAST_INWHILE && tmp2 != STMTAST_BREAK && tmp2 != STMTAST_CONTINUE){
           cout<<"\tjump %end"<<if_flag_level[if_level]<<endl;
         }
       }
@@ -209,8 +226,9 @@ class MultElseStmtAST : public BaseAST{
 
 };
 
+
 //遇到return不继续执行，直接返回
-class If_return : BaseAST{
+class If_return : public BaseAST{
   public:
     std::unique_ptr<BaseAST> if_return_flag;
     void Dump() const override{
@@ -222,4 +240,97 @@ class If_return : BaseAST{
     void Dump(string &sign1,string &sign2,string &sign) const override{}
     [[nodiscard]] int calc() const override{return 7;}
     //返回7标识return标志
+};
+
+
+class WhileStmtHeadAST : public BaseAST{
+  public:
+    std::unique_ptr<BaseAST> WhileHead;
+    int type;
+    void Dump() const override{
+        WhileHead->Dump();
+    }
+
+    void Dump(string &sign) const override{}
+    void Dump(int value) const override{}
+    void Dump(string &sign1,string &sign2,string &sign) const override{}
+    [[nodiscard]] int calc() const override{return 0;}
+};
+
+class WhileStmtAST : public BaseAST{
+  public:
+    std::unique_ptr<BaseAST> exp;
+    std::unique_ptr<BaseAST> stmt;
+    void Dump() const override{
+        //首先生成while语句入口
+        alloc_now++;
+        int flag = alloc_now;
+        record_while[while_level] = alloc_now;
+        while_level++;
+        cout<<"\tjump %while_entry"<<alloc_now<<endl;
+        cout<<endl;
+        cout<<"%while_entry"<<alloc_now<<":"<<endl;
+        string sign1;
+        exp->Dump(sign1);
+        //处理cond while_body end
+        cout<<"\tbr "<<sign1<<", %while_body"<<flag<<", %end"<<flag<<endl;
+        cout<<endl;
+
+        //while body
+        cout<<"%while_body"<<flag<<":"<<endl;
+        int tmp = stmt->calc();
+        stmt->Dump();
+        //cout<<"break_cnt + continue_cnt"<<break_cnt + continue_cnt<<endl;
+        if(tmp != STMTAST_RET){
+          if(break_cnt + continue_cnt == 0 && ret_cnt == 0){
+            cout<<"\tjump "<<"%while_entry"<<flag<<endl;
+          }
+          if(break_cnt + continue_cnt > 0 || ret_cnt > 0){
+            break_cnt = 0;
+            continue_cnt = 0;
+            ret_cnt = 0;
+          }
+        }
+        
+        cout<<endl;
+        //end
+        //if(break_cnt + continue_cnt == 0)
+        cout<<"%end"<<flag<<":"<<endl;
+        while_level--;
+      }
+
+      void Dump(string &sign) const override{}
+      void Dump(int value) const override{}
+      void Dump(string &sign1,string &sign2,string &sign) const override{}
+      [[nodiscard]] int calc() const override{return 0;}
+};
+
+//cut stmt after break
+class InWhileAST : public BaseAST{
+  public:
+    int type;
+    void Dump() const override{
+       switch(type){
+        case STMTAST_BREAK:{
+          //if(continue_cnt + break_cnt == 0)
+          cout<<"\tjump "<<"%end"<<record_while[while_level - 1]<<endl;
+          //while_level--;
+          break_cnt++;
+          //cout<<"break_cnt "<<break_cnt<<endl;
+          break;
+        }
+        case STMTAST_CONTINUE:{
+          cout<<"\tjump "<<"%while_entry"<<record_while[while_level - 1]<<endl;
+          continue_cnt++;
+          //while_level--;
+          break;
+        }
+       }
+        
+    }
+
+      void Dump(string &sign) const override{}
+      void Dump(int value) const override{}
+      void Dump(string &sign1,string &sign2,string &sign) const override{}
+      [[nodiscard]] int calc() const override{return 0;}
 };
