@@ -43,6 +43,7 @@ enum{
   SINBLOCKITEM_STM,
   SINVARDEFAST_UIN,
   SINVARDEFAST_INI,
+  SINVARDEFAST_FUNC,
   STMTAST_RET,
   STMTAST_LVA,
   STMTAST_SINE,
@@ -57,11 +58,17 @@ enum{
   LVALAST_LEFT,
   LVALAST_RIGHT,
   SINEXPAST_EXP,
-  SINEXPAST_NULL
+  SINEXPAST_NULL,
+  PARA,
+  NO_PARA,
+  FUNC_SIN,
+  FUNC_MUL,
+  FUNC_EXP
 }Kind;
 
 extern int ScopeLevel;
 extern IdentTableNode* IdentTable;
+extern FuncTable funcTable;
 extern int end_br[100];
 //extern unordered_map<string,int> ValueTable;
 //extern unordered_map<string,int> VarTable;
@@ -73,6 +80,9 @@ static int record_while[100] = {0};
 static int while_level = 0;
 static int break_cnt = 0;
 static int continue_cnt = 0;
+static int ret_func = 0;
+static int func_call_cnt = 0;
+static int is_lva = 0;
 class BaseAST {
  public:
   virtual ~BaseAST() = default;
@@ -83,7 +93,7 @@ class BaseAST {
   virtual void Dump(int value) const = 0; // 这个用来传递整形变量
   [[nodiscard]] virtual int calc() const = 0;//计算表达式的值
 };
-// CompUnit 是 BaseAST
+
 class CompUnitAST : public BaseAST {
  public:
   // 用智能指针管理对象
@@ -102,10 +112,75 @@ class CompUnitAST : public BaseAST {
   [[nodiscard]] int calc() const override{return 0;}
 };
 
+
+
+// CompUnit 是 BaseAST
+class CompUnit1AST : public BaseAST {
+ public:
+  // 用智能指针管理对象
+  std::unique_ptr<BaseAST> func_def;
+  std::unique_ptr<BaseAST> mul;
+  int type;
+  void Dump() const override {
+    //cout << "enter CompUnitAST" << endl;
+    switch(type){
+      case 0:{
+        //cout << "enter 0" << endl;
+        //IdentTable = new IdentTableNode();
+        //ScopeLevel = 0;
+        //IdentTable->level = ScopeLevel;
+        alloc_now = -1;
+        func_def->Dump();
+        //delete IdentTable;
+        break;
+      }
+      case 1:{
+        //cout << "enter 1" << endl;
+        //IdentTable = new IdentTableNode();
+        //ScopeLevel = 0;
+        //IdentTable->level = ScopeLevel;
+        alloc_now = -1;
+        mul->Dump();
+        cout<<endl;
+        alloc_now = -1;
+        func_def->Dump();
+        //alloc_now = -1;
+        //delete IdentTable;
+        break;
+      }
+    }
+    
+  }
+  void Dump(int value) const override{};
+  void Dump(string &sign) const override {}//这两个不需要在此处重载
+  void Dump(string &sign1,string &sign2,string &sign) const override{}
+  [[nodiscard]] int calc() const override{return 0;}
+};
+
 // FuncDef 也是 BaseAST
 //这里就是返回值的问题，但是这里考虑可以把返回值设为string,直接将常数改为string返回就可以了
 //对于OP类型的，如果是enum表示的type,返回type值，如果直接存储运算符，则返回运算符的值
 
+class SinCompUnitAST : public BaseAST {
+ public:
+    std::unique_ptr<BaseAST> func_def;
+    int type;
+    void Dump() const override {
+      switch(type){
+        case(0): 
+            func_def->Dump();
+            break;
+        case(1):
+            func_def->Dump();
+            break;
+      }
+      
+    }
+    void Dump(int value) const override{}
+    void Dump(string &sign) const override {}
+    void Dump(string &sign1,string &sign2,string &sign) const override{}
+    [[nodiscard]] int calc() const override{return type;}
+};
 
 
 

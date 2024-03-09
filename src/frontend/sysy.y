@@ -39,7 +39,7 @@ using namespace std;
 
 // lexer 返回的所有 token 种类的声明
 // 注意 IDENT 和 INT_CONST 会返回 token 的值, 分别对应 str_val 和 int_val
-%token INT RETURN EQ LE GE NE AND OR CONST IF ELSE WHILE BREAK CONTINUE
+%token INT RETURN EQ LE GE NE AND OR CONST IF ELSE WHILE BREAK CONTINUE VOID
 %token <str_val> IDENT
 %token <int_val> INT_CONST 
 
@@ -48,7 +48,10 @@ using namespace std;
 %type <ast_val> UnaryOp AddExp MulExp AddOp MulOp LOrExp LAndExp
 %type <ast_val> EqExp EqOp RelExp RelOp Decl ConstDecl MulConstDef
 %type <ast_val> SinConstDef ConstExp Btype MulBlockItem SinBlockItem LValL LValR
-%type <ast_val> VarDecl SinVarDef MulVarDef InitVal SinExp IfStmt SinIfStmt MultElseStmt WhileStmt WhileStmtHead InWhile
+%type <ast_val> VarDecl SinVarDef MulVarDef InitVal SinExp 
+%type <ast_val> IfStmt SinIfStmt MultElseStmt WhileStmt WhileStmtHead InWhile
+%type <ast_val> GlobalDecl FuncFParams ParaType MulFuncFParam SinFuncFParam 
+%type <ast_val> FuncExp ExistPara ExistSin ExistMul SinCompUnit CompUnit1
 %type <int_val> Number 
 
 %%
@@ -59,10 +62,49 @@ using namespace std;
 // 此时我们应该把 FuncDef 返回的结果收集起来, 作为 AST 传给调用 parser 的函数
 // $1 指代规则里第一个符号的返回值, 也就是 FuncDef 的返回值
 CompUnit
-  : FuncDef {
+  : CompUnit1 {
     auto comp_unit = make_unique<CompUnitAST>();
     comp_unit->func_def = unique_ptr<BaseAST>($1);
     ast = move(comp_unit);
+  } 
+  ;
+
+CompUnit1
+  : SinCompUnit {
+    auto ast = new CompUnit1AST();
+    ast->func_def = unique_ptr<BaseAST>($1);
+    ast->type = 0;
+    $$ = ast;
+  } |   CompUnit1  SinCompUnit {
+    auto comp_unit = new CompUnit1AST();
+    comp_unit->func_def = unique_ptr<BaseAST>($2);
+    comp_unit->mul = unique_ptr<BaseAST>($1);
+    comp_unit->type = 1;
+    $$ = comp_unit;
+  }
+  ;
+
+
+SinCompUnit
+  : GlobalDecl {
+    auto ast = new SinCompUnitAST();
+    ast->func_def = unique_ptr<BaseAST>($1);
+    ast->type = 0;
+    $$ = ast;
+  } | FuncDef {
+    auto ast = new SinCompUnitAST();
+    ast->func_def = unique_ptr<BaseAST>($1);
+    ast->type = 1;
+    $$ = ast;
+  }
+
+
+//maybe array
+GlobalDecl
+  : Decl {
+    auto ast = new GlobalDeclAST();
+    ast->global = unique_ptr<BaseAST>($1);
+    $$ = ast;
   }
   ;
 
@@ -82,7 +124,50 @@ FuncDef
     ast->func_type = unique_ptr<BaseAST>($1);
     ast->ident = *unique_ptr<string>($2);
     ast->block = unique_ptr<BaseAST>($5);
+    ast->type = NO_PARA;
     $$ = ast;
+  } | FuncType IDENT '(' FuncFParams')' Block {
+    auto ast = new FuncDefAST();
+    ast->func_type = unique_ptr<BaseAST>($1);
+    ast->ident = *unique_ptr<string>($2);
+    ast->FuncFParams = unique_ptr<BaseAST>($4);
+    ast->block = unique_ptr<BaseAST>($6);
+    ast->type = PARA;
+    $$ = ast;
+  }
+  ;
+
+FuncFParams 
+  : SinFuncFParam {
+    auto ast = new FuncFParamsAST();
+    ast->para = unique_ptr<BaseAST>($1);
+    ast->type = FUNC_SIN;
+    $$ = ast;
+  } | MulFuncFParam {
+    auto ast = new FuncFParamsAST();
+    ast->para = unique_ptr<BaseAST>($1);
+    ast->type = FUNC_MUL;
+    $$ = ast;
+  }
+  ;
+
+
+SinFuncFParam
+  : ParaType IDENT {
+    auto ast = new SinFuncFParamAST();
+    ast->ident = *unique_ptr<string>($2);
+    ast->ParaType = unique_ptr<BaseAST>($1);
+    $$ = ast;
+  }
+  ;
+
+
+MulFuncFParam
+  : SinFuncFParam ',' FuncFParams {
+      auto ast = new MulFuncFParamAST();
+      ast->sin_para = unique_ptr<BaseAST>($1);
+      ast->mul_para = unique_ptr<BaseAST>($3);
+      $$ = ast;
   }
   ;
 
@@ -90,9 +175,25 @@ FuncDef
 FuncType
   : INT {
     auto ast = new FuncTypeAST();
+    //ast->flag = unique_ptr<BaseAST>($1);
+    ast->type = 0;
+    $$ = ast;
+  } | VOID {
+    auto ast = new FuncTypeAST();
+    //ast->flag = unique_ptr<BaseAST>($1);
+    ast->type = 1;
+    $$ = ast;
+    
+  }
+  ;
+
+ParaType 
+  : INT {
+    auto ast = new ParaTypeAST();
     $$ = ast;
   }
   ;
+
 
 Decl
   : ConstDecl {
@@ -173,7 +274,13 @@ SinVarDef
     ast->ident = *unique_ptr<string>($1);
     ast->InitVal= unique_ptr<BaseAST>($3);
     $$         = ast;
-  }
+  } | IDENT '=' FuncExp {
+    auto ast = new SinVarDefAST();
+    ast->type = SINVARDEFAST_FUNC;
+    ast->ident = *unique_ptr<string>($1);
+    ast->func_exp = unique_ptr<BaseAST>($3);
+    $$ = ast;
+  } 
   ;
 
 InitVal
@@ -527,6 +634,7 @@ Number
   }
   ;
 
+//using our function
 UnaryExp 
   : PrimaryExp {
     auto ast        = new UnaryExpAST_P();
@@ -536,6 +644,56 @@ UnaryExp
     auto ast        = new UnaryExpAST_U();
     ast->UnaryOp    = unique_ptr<BaseAST>($1);
     ast->UnaryExp   = unique_ptr<BaseAST>($2);
+    $$ = ast;
+  } | FuncExp {
+    auto ast        = new UnaryExpAST_F();
+    ast->PrimaryExp = unique_ptr<BaseAST> ($1);
+    $$ = ast; 
+  }
+  ;
+
+  
+FuncExp  
+  : IDENT '(' ')'{
+    auto ast = new FuncExpAST_F();
+    ast->ident = *unique_ptr<string>($1);
+    ast->type = NO_PARA;
+    $$ = ast;
+  } | IDENT '(' ExistPara ')'{
+    auto ast = new FuncExpAST_F();
+    ast->ident = *unique_ptr<string>($1);
+    ast->type = PARA;
+    ast->para = unique_ptr<BaseAST>($3);
+    $$ = ast;
+  }
+  ;
+
+
+ExistPara
+  : ExistSin {
+    auto ast= new ExistParaAST();
+    ast->para = unique_ptr<BaseAST>($1);
+    $$ = ast;
+  } | ExistMul {
+    auto ast = new ExistParaAST();
+    ast->para = unique_ptr<BaseAST>($1);
+    $$ = ast;
+  }
+  ;
+
+ExistSin 
+  : Exp {
+    auto ast = new ExistSinAST();
+    ast->exp = unique_ptr<BaseAST>($1);
+    $$  = ast;
+  }
+  ;
+
+ExistMul 
+  : ExistPara ',' ExistSin {
+    auto ast = new ExistMulAST();
+    ast->sin = unique_ptr<BaseAST>($3);
+    ast->mul = unique_ptr<BaseAST>($1);
     $$ = ast;
   }
   ;

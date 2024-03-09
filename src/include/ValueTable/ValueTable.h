@@ -19,6 +19,7 @@ class IdentTableNode {
     public:
         IdentTableNode *father; //父节点
         IdentTableNode *child; //子节点
+        //IdentTableNode *child2;
         int level;
         unordered_map<string,int> ConstTable; //常量表
         unordered_map<string,int> VarTable;  //变量表
@@ -26,5 +27,11 @@ class IdentTableNode {
         IdentTableNode() {
             father = nullptr;
             child  = nullptr;
+            //child2 = nullptr;
         }  
+};
+
+class FuncTable{
+    public:
+    unordered_map<string,bool> FuncTable; //bool表示函数是否存在返回值
 };

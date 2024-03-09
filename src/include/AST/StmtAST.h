@@ -17,15 +17,20 @@ class StmtAST : public BaseAST {
       //auto& VarTable   = IdentTable->VarTable;
       
       string sign;
+      //cout<<"666"<<endl;
       if(break_cnt == 0 && continue_cnt == 0){
       switch(type) {
-          case STMTAST_RET:
+          case STMTAST_RET:{
+              //cout<<tmp<<"tmp"<<endl;
+              //ret_cnt++;
               SinExp->Dump(sign);
               cout << "  " << "ret " << sign << endl; 
               break;
+          } 
           case STMTAST_LVA:{
             //cout << "parsing Lval" << endl;
             string sign1,sign2;
+            //cout<<"hello world"<<endl;
             Lval->Dump(sign1);
             Exp->Dump(sign2);
             int value = Exp->calc();
@@ -53,7 +58,12 @@ class StmtAST : public BaseAST {
             }
             break;
           }
-        case STMTAST_SINE: break;
+        case STMTAST_SINE: {
+            //cout<<"666";
+            SinExp->Dump(sign);
+            break;
+        }
+        
         case STMTAST_BLO: Block->Dump(); break;
         case STMTAST_IF: IfHead->Dump(); break;
         case STMTAST_WHILE: WhileHead->Dump(); break;
@@ -280,7 +290,7 @@ class WhileStmtAST : public BaseAST{
         cout<<"%while_body"<<flag<<":"<<endl;
         int tmp = stmt->calc();
         stmt->Dump();
-        //cout<<"break_cnt + continue_cnt"<<break_cnt + continue_cnt<<endl;
+        //cout<<"break_cnt + continue_cnt,ret_cnt: "<<break_cnt + continue_cnt << ret_cnt<<endl;
         if(tmp != STMTAST_RET){
           if(break_cnt + continue_cnt == 0 && ret_cnt == 0){
             cout<<"\tjump "<<"%while_entry"<<flag<<endl;

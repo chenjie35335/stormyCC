@@ -106,6 +106,7 @@ class SinVarDefAST : public BaseAST {
 public:
     string ident;
     unique_ptr<BaseAST>InitVal;
+    unique_ptr<BaseAST>func_exp;
     uint32_t type;
     void Dump() const override{
       //cout<< "sinconstdef" << endl;
@@ -116,18 +117,30 @@ public:
       if(ValueTable.find(ident) != ValueTable.end()){
           cerr << '"' << ident << '"' << " has been defined as constant" <<endl;
           exit(-1);
-      }
+      } 
        if(VarTable.find(ident) != VarTable.end()){
           cerr << '"' << ident << '"' << " redefined" <<endl;
           exit(-1);
         }
       cout << "  @"+ident+"_"+to_string(dep) <<" = " << "alloc i32" << endl;
+      string sign;
       switch(type) {
+        //we need add type
         case SINVARDEFAST_UIN: break;
         case SINVARDEFAST_INI:
         {
+          //cout<<"hello"<<endl;
           value = InitVal->calc();
           cout << "  store " << value<< ", " << "@"+ident+"_"+to_string(dep)<<endl;
+          break;
+        }
+        case SINVARDEFAST_FUNC:{
+          //if(alloc_now < 0) alloc_now = 0;
+          // alloc_now++;
+          // cout<<"\t%"<<alloc_now<<" = ";
+          func_exp->Dump(sign);
+          cout << "  store " << sign <<", @"<<ident<<"_"<<to_string(dep)<<endl;
+          //alloc_now++;
           break;
         }
       }
@@ -142,8 +155,12 @@ public:
 class InitValAST : public BaseAST {
 public:
     unique_ptr<BaseAST>Exp;
-    void Dump() const override{}
-    void Dump(string & sign) const override {}
+    void Dump() const override{
+    }
+    void Dump(string & sign) const override {
+      //cout<<"hello world"<<endl;
+      Exp->Dump(sign);
+    }
     void Dump(int value) const override{}
     void Dump(string & sign1, string & sign2,string & sign)const override{}
     [[nodiscard]] int calc() const override {return Exp->calc();}

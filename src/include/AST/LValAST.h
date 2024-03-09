@@ -32,6 +32,7 @@ class LValRAST : public BaseAST {
           alloc_now++;
           sign = "%"+to_string(alloc_now);
           cout << "  "<<sign << " = " << "load " << "@"+ident+"_"+to_string(dep)<<endl;
+          //is_lva = 1;
           break;
        }
        p = p->father;

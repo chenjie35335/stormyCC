@@ -347,6 +347,7 @@ class UnaryExpAST_P : public BaseAST {
   public:
   //UnaryExp第一种情况
     std::unique_ptr<BaseAST> PrimaryExp;
+    int type;
     void Dump() const override {}
     void Dump(int value) const override{}
     void Dump(string &sign) const override{
@@ -383,6 +384,102 @@ class UnaryExpAST_U : public BaseAST {
         return value;
     }
 };
+
+
+class UnaryExpAST_F : public BaseAST {
+  public:
+  //UnaryExp第一种情况
+    std::unique_ptr<BaseAST> PrimaryExp;
+    int type;
+    void Dump() const override {}
+    void Dump(int value) const override{}
+    void Dump(string &sign) const override{
+      //cout<<"let's begin"<<endl;
+      PrimaryExp->Dump(sign);
+    }
+    void Dump(string &sign1,string &sign2,string &sign) const override{}
+    [[nodiscard]] int calc() const override{
+        return PrimaryExp->calc();
+    }
+};
+
+class FuncExpAST_F : public BaseAST {
+ public:
+    std::string ident;
+    std::unique_ptr<BaseAST> para;
+    int type;
+    void Dump() const override {}
+    void Dump(int value) const override{}
+    void Dump(string &sign) const override {
+      //using function
+      //cout<<"let's begin"<<endl;
+      
+      //func_call_cnt++;
+      if(funcTable.FuncTable.at(ident)){
+      alloc_now++;
+      sign = "%"+to_string(alloc_now);
+      cout<<"\t"<<sign<<" = ";
+      }
+      if(type == NO_PARA){
+        cout<<"  call @"<<ident<<"()"<<endl;
+      }
+      if(type == PARA){
+        cout<<"  call @";
+        cout<<ident;
+        cout<<"(";
+        para->Dump(sign);
+        cout<<")"<<endl;
+      }
+    }
+    void Dump(string &sign1,string &sign2,string &sign) const override{}
+    [[nodiscard]] int calc() const override{return 37;}
+};
+
+class ExistParaAST : public BaseAST {
+ public:
+    std::unique_ptr<BaseAST> para;
+    int type;
+    void Dump() const override {}
+    void Dump(int value) const override{}
+    void Dump(string &sign) const override {
+      para->Dump(sign);
+    }
+    void Dump(string &sign1,string &sign2,string &sign) const override{}
+    [[nodiscard]] int calc() const override{return 0;}
+};
+
+
+class ExistSinAST : public BaseAST {
+ public:
+    std::unique_ptr<BaseAST> exp;
+    void Dump() const override {}
+    void Dump(int value) const override{}
+    void Dump(string &sign) const override {
+        exp->Dump(sign);
+      //cout<<"666"<<endl;
+    }
+    void Dump(string &sign1,string &sign2,string &sign) const override{}
+    [[nodiscard]] int calc() const override{return 0;}
+};
+
+
+class ExistMulAST : public BaseAST {
+ public:
+    std::unique_ptr<BaseAST> sin;
+    std::unique_ptr<BaseAST> mul;
+    void Dump() const override {}
+    void Dump(int value) const override{}
+    void Dump(string &sign) const override {
+      mul->Dump(sign);
+      cout<<", ";
+      sin->Dump(sign);
+    }
+    void Dump(string &sign1,string &sign2,string &sign) const override{}
+    [[nodiscard]] int calc() const override{return 0;}
+};
+
+
+
 
 class PrimaryExpAST : public BaseAST {
   public:
