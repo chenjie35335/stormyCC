@@ -72,14 +72,8 @@ class StmtAST : public BaseAST {
           default:
               assert(0);
       } 
-    } 
-      
+    }  
     }
-    void Dump(string &sign) const override{
-      
-    }
-    void Dump(int value) const override{}
-    void Dump(string &sign1,string &sign2,string &sign) const override{}
     [[nodiscard]] int calc() const override{return type;};
 };
 
@@ -88,15 +82,8 @@ class IfStmtAST : public BaseAST{
   public:
     std::unique_ptr<BaseAST> if_head_stmt;
      void Dump() const override{
-      //add your content
-      //string sign;
-      //cout<<"hello world"<<endl;
       if_head_stmt->Dump();
      }
-
-    void Dump(string &sign) const override{}
-    void Dump(int value) const override{}
-    void Dump(string &sign1,string &sign2,string &sign) const override{}
     [[nodiscard]] int calc() const override{return 0;}
 };
 
@@ -106,12 +93,6 @@ class SinIfStmtAST : public BaseAST{
      std::unique_ptr<BaseAST> exp;
      std::unique_ptr<BaseAST> stmt;
      void Dump() const override{
-      //add your content
-      //调用calc接口
-      //确定中间变量
-      //中间变量的定义
-      //must set end in beginning
-      //if(end_br[alloc_now] == 1) return ;
       string sign1;
       exp->Dump(sign1);
       //输出对应中间变量担任名称
@@ -142,20 +123,11 @@ class SinIfStmtAST : public BaseAST{
         if(tmp != STMTAST_BLO && tmp != STMTAST_BREAK && tmp != STMTAST_CONTINUE && tmp != STMTAST_INWHILE){
           cout<<"\tjump %end"<<if_flag_level[if_level]<<endl;
         }
-      }
-      
-      //cout<<"tmp = "<<tmp;
-        
+      } 
       //end序列及其序号
       cout<<endl;
       cout<<"%end"<<if_flag_level[if_level]<<":"<<endl;
-
      }
-
-    void Dump(string &sign) const override{}
-    void Dump(int value) const override{}
-    void Dump(string &sign1,string &sign2,string &sign) const override{}
-    [[nodiscard]] int calc() const override{return 20;}
 };
 
 class MultElseStmtAST : public BaseAST{
@@ -198,8 +170,6 @@ class MultElseStmtAST : public BaseAST{
           cout<<"\tjump %end"<<if_flag_level[if_level]<<endl;
         }
       }
-        
-
       //执行else_stmt序列的内容
       cout<<endl;
       cout<<"%else"<<if_flag_level[if_level]<<":"<<endl;
@@ -229,10 +199,6 @@ class MultElseStmtAST : public BaseAST{
       //end终止退出符
 
   }
-    void Dump(string &sign) const override{}
-    void Dump(int value) const override{}
-    void Dump(string &sign1,string &sign2,string &sign) const override{}
-    [[nodiscard]] int calc() const override{ return 0;}
 
 };
 
@@ -244,11 +210,6 @@ class If_return : public BaseAST{
     void Dump() const override{
         if_return_flag->Dump();
     }
-
-    void Dump(string &sign) const override{}
-    void Dump(int value) const override{}
-    void Dump(string &sign1,string &sign2,string &sign) const override{}
-    [[nodiscard]] int calc() const override{return 7;}
     //返回7标识return标志
 };
 
@@ -260,11 +221,6 @@ class WhileStmtHeadAST : public BaseAST{
     void Dump() const override{
         WhileHead->Dump();
     }
-
-    void Dump(string &sign) const override{}
-    void Dump(int value) const override{}
-    void Dump(string &sign1,string &sign2,string &sign) const override{}
-    [[nodiscard]] int calc() const override{return 0;}
 };
 
 class WhileStmtAST : public BaseAST{
@@ -308,11 +264,6 @@ class WhileStmtAST : public BaseAST{
         cout<<"%end"<<flag<<":"<<endl;
         while_level--;
       }
-
-      void Dump(string &sign) const override{}
-      void Dump(int value) const override{}
-      void Dump(string &sign1,string &sign2,string &sign) const override{}
-      [[nodiscard]] int calc() const override{return 0;}
 };
 
 //cut stmt after break
@@ -335,12 +286,6 @@ class InWhileAST : public BaseAST{
           //while_level--;
           break;
         }
-       }
-        
+       }    
     }
-
-      void Dump(string &sign) const override{}
-      void Dump(int value) const override{}
-      void Dump(string &sign1,string &sign2,string &sign) const override{}
-      [[nodiscard]] int calc() const override{return 0;}
 };

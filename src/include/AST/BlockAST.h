@@ -5,20 +5,18 @@ class BlockAST : public BaseAST {
     std::unique_ptr<BaseAST> MulBlockItem;
     void Dump() const override {
       auto BlockScope = new IdentTableNode();
+      if(IdentTable->child == NULL){
       ScopeLevel++;
       BlockScope->father = IdentTable;
       BlockScope->level  = ScopeLevel;
       IdentTable->child  = BlockScope;
+      }
       IdentTable = IdentTable->child;
       MulBlockItem->Dump();
       IdentTable = IdentTable->father;
       IdentTable->child = NULL;
       delete BlockScope;
 }
-    void Dump(string &sign) const override {}
-    void Dump(int value) const override{}
-    void Dump(string &sign1,string &sign2,string &sign) const override{}
-    [[nodiscard]] int calc() const override{return 0;}
 };
 
 class MulBlockItemAST : public BaseAST {
@@ -33,10 +31,6 @@ class MulBlockItemAST : public BaseAST {
         }
       }
     }
-    void Dump(string &sign) const override {} 
-    void Dump(int value) const override{}
-    void Dump(string &sign1,string &sign2,string &sign) const override{}
-    [[nodiscard]] int calc() const override{return 0;}
 };
 //单个block生成一个作用域
 class SinBlockItemAST : public BaseAST {
@@ -53,9 +47,6 @@ class SinBlockItemAST : public BaseAST {
         default:assert(0);
       }
     }
-    void Dump(string &sign) const override {} 
-    void Dump(int value) const override{}
-    void Dump(string &sign1,string &sign2,string &sign) const override{}
     [[nodiscard]] int calc() const override{
       switch(type) {
         case SINBLOCKITEM_DEC: return 0; break;

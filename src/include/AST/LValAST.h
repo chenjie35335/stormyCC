@@ -3,13 +3,9 @@
 class LValLAST : public BaseAST {
   public:
     string ident;
-    void Dump() const override {}
     void Dump(string &sign) const override {
       sign = ident;
     }
-    void Dump(string &sign, string &sign1, string &sign2) const override {}
-    void Dump(int value) const override {}  
-    int calc() const override {return 0; }
 };
 
 class LValRAST : public BaseAST {
@@ -43,8 +39,6 @@ class LValRAST : public BaseAST {
          exit(-1);
        }
     }
-    void Dump(string &sign, string &sign1, string &sign2) const override {}
-    void Dump(int value) const override {}  
     int calc() const override {
       auto p           = IdentTable;
       while(p != nullptr) {

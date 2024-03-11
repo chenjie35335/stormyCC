@@ -4,7 +4,7 @@
 #include <cassert>
 #include <unordered_map>
 #include <vector>
-#include <ValueTable.h>
+#include "../ValueTable/ValueTable.h"
 using namespace std;
 #pragma once
 // 所有 AST 的基类
@@ -59,11 +59,13 @@ enum{
   LVALAST_RIGHT,
   SINEXPAST_EXP,
   SINEXPAST_NULL,
-  PARA,
-  NO_PARA,
   FUNC_SIN,
   FUNC_MUL,
-  FUNC_EXP
+  FUNC_EXP,
+  COMP_FUNC,
+  COMP_GLO,
+  FUNCTYPE_INT,
+  FUNCTYPE_VOID
 }Kind;
 
 extern int ScopeLevel;
@@ -83,78 +85,44 @@ static int continue_cnt = 0;
 static int ret_func = 0;
 static int func_call_cnt = 0;
 static int is_lva = 0;
+static int rank_name = 0;
 class BaseAST {
  public:
   virtual ~BaseAST() = default;
-  virtual void Dump() const = 0;//这个用来无返回值遍历
-  virtual void Dump(string &sign) const = 0;//这个用来带有单个返回值的遍历
-  virtual void Dump(string &sign1,string &sign2,string &sign) const = 0;
+  virtual void Dump() const {}//这个用来无返回值遍历
+  virtual void Dump(string &sign) const {};//这个用来带有单个返回值的遍历
+  virtual void Dump(string &sign1,string &sign2,string &sign) const{};
   //这个用来带有双目运算符的遍历
-  virtual void Dump(int value) const = 0; // 这个用来传递整形变量
-  [[nodiscard]] virtual int calc() const = 0;//计算表达式的值
+  virtual void Dump(string &sign,vector<string> &Para) const{};
+  [[nodiscard]] virtual int calc() const {return 0;}//计算表达式的值
 };
 
 class CompUnitAST : public BaseAST {
  public:
   // 用智能指针管理对象
-  std::unique_ptr<BaseAST> func_def;
+  std::unique_ptr<BaseAST> multCompUnit;
   void Dump() const override {
     IdentTable = new IdentTableNode();
     ScopeLevel = 0;
     IdentTable->level = ScopeLevel;
-    alloc_now = -1;
-    func_def->Dump();
+    //alloc_now = -1;
+    multCompUnit->Dump();
     delete IdentTable;
   }
-  void Dump(int value) const override{};
-  void Dump(string &sign) const override {}//这两个不需要在此处重载
-  void Dump(string &sign1,string &sign2,string &sign) const override{}
-  [[nodiscard]] int calc() const override{return 0;}
 };
 
 
 
 // CompUnit 是 BaseAST
-class CompUnit1AST : public BaseAST {
+class MultCompUnitAST : public BaseAST {
  public:
   // 用智能指针管理对象
-  std::unique_ptr<BaseAST> func_def;
-  std::unique_ptr<BaseAST> mul;
-  int type;
+  vector<unique_ptr<BaseAST>> sinCompUnit;
   void Dump() const override {
-    //cout << "enter CompUnitAST" << endl;
-    switch(type){
-      case 0:{
-        //cout << "enter 0" << endl;
-        //IdentTable = new IdentTableNode();
-        //ScopeLevel = 0;
-        //IdentTable->level = ScopeLevel;
-        alloc_now = -1;
-        func_def->Dump();
-        //delete IdentTable;
-        break;
-      }
-      case 1:{
-        //cout << "enter 1" << endl;
-        //IdentTable = new IdentTableNode();
-        //ScopeLevel = 0;
-        //IdentTable->level = ScopeLevel;
-        alloc_now = -1;
-        mul->Dump();
-        cout<<endl;
-        alloc_now = -1;
-        func_def->Dump();
-        //alloc_now = -1;
-        //delete IdentTable;
-        break;
-      }
+    for(auto &sinComp : sinCompUnit) {
+      sinComp->Dump();
     }
-    
   }
-  void Dump(int value) const override{};
-  void Dump(string &sign) const override {}//这两个不需要在此处重载
-  void Dump(string &sign1,string &sign2,string &sign) const override{}
-  [[nodiscard]] int calc() const override{return 0;}
 };
 
 // FuncDef 也是 BaseAST
@@ -164,21 +132,21 @@ class CompUnit1AST : public BaseAST {
 class SinCompUnitAST : public BaseAST {
  public:
     std::unique_ptr<BaseAST> func_def;
+    std::unique_ptr<BaseAST> glob_def;
     int type;
     void Dump() const override {
       switch(type){
-        case(0): 
+        case COMP_FUNC: 
             func_def->Dump();
             break;
-        case(1):
-            func_def->Dump();
+        case COMP_GLO:
+            //glob_def->Dump();
             break;
+        default:
+            assert(0);
       }
       
     }
-    void Dump(int value) const override{}
-    void Dump(string &sign) const override {}
-    void Dump(string &sign1,string &sign2,string &sign) const override{}
     [[nodiscard]] int calc() const override{return type;}
 };
 

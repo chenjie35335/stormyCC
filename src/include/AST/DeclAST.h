@@ -13,10 +13,6 @@ class DeclAST : public BaseAST {
             default: assert(0);
         }
     }
-    void Dump(string &sign) const override {}
-    void Dump(int value) const override{}
-    void Dump(string &sign1,string &sign2,string &sign) const override{}
-    [[nodiscard]] int calc() const override{return 0;}
 };
 
 class ConstDeclAST : public BaseAST {
@@ -26,20 +22,11 @@ class ConstDeclAST : public BaseAST {
     void Dump() const override {
        MulConstDef->Dump();
     }
-    void Dump(string &sign) const override {}
-    void Dump(int value) const override{}
-    void Dump(string &sign1,string &sign2,string &sign) const override{}
-    [[nodiscard]] int calc() const override{return 0;}
 };
 
 class BtypeAST : public BaseAST {
   public:
     string type;
-    void Dump() const override {}
-    void Dump(string &sign) const override {}
-    void Dump(int value) const override{}
-    void Dump(string &sign,string  &sign1,string &sign2) const override{}
-    [[nodiscard]] int calc() const override{return 0;}
 };
 //这里使用mulConstDef递归嵌套的方式实现多个，而且使用vector存储可以提高树的平衡性
 class MulConstDefAST : public BaseAST {
@@ -50,10 +37,6 @@ class MulConstDefAST : public BaseAST {
           sinConstDef->Dump();
         }
     }
-    void Dump(string &sign) const override {}
-    void Dump(int value) const override{}
-    void Dump(string &sign1,string &sign2,string &sign) const override{}
-    [[nodiscard]] int calc() const override{return 0;}
 };
 
 class SinConstDefAST : public BaseAST{
@@ -70,10 +53,6 @@ class SinConstDefAST : public BaseAST{
       int value = ConstExp->calc();
       ValueTable.insert(pair<string,int>(ident,value));
     }
-    void Dump(string &sign) const override {} 
-    void Dump(int value) const override{}
-    void Dump(string &sign1,string &sign2,string &sign) const override{}
-    [[nodiscard]] int calc() const override{return 0;}
 };
 
 class VarDeclAST : public BaseAST {
@@ -82,10 +61,6 @@ public:
      void Dump() const override{
         MulVarDef->Dump();
      }
-     void Dump(string & sign) const override {}
-     void Dump(int value) const override{}
-     void Dump(string &sign1, string &sign2,string &sign)const override{}
-     [[nodiscard]] int calc() const override {return 0;}
 };
 
 class MulVarDefAST : public BaseAST {
@@ -96,10 +71,6 @@ public:
           sinValDef->Dump();
       }
     }
-    void Dump(string & sign) const override {}
-    void Dump(int value) const override{}
-    void Dump(string &sign1, string &sign2,string &sign)const override{}
-    [[nodiscard]] int calc() const override {return 0;}
 };
 
 class SinVarDefAST : public BaseAST {
@@ -130,8 +101,8 @@ public:
         case SINVARDEFAST_INI:
         {
           //cout<<"hello"<<endl;
-          value = InitVal->calc();
-          cout << "  store " << value<< ", " << "@"+ident+"_"+to_string(dep)<<endl;
+          InitVal->Dump(sign);
+          cout << "  store " << sign<< ", " << "@"+ident+"_"+to_string(dep)<<endl;
           break;
         }
         case SINVARDEFAST_FUNC:{
@@ -146,33 +117,20 @@ public:
       }
       VarTable.insert(pair<string,int>(ident,value));
     }
-    void Dump(int value) const override{}
-    void Dump(string & sign) const override {}
-    void Dump(string &sign1, string &sign2,string &sign)const override{}
-    [[nodiscard]] int calc() const override {return 0;}
 };
 
 class InitValAST : public BaseAST {
 public:
     unique_ptr<BaseAST>Exp;
-    void Dump() const override{
-    }
     void Dump(string & sign) const override {
-      //cout<<"hello world"<<endl;
       Exp->Dump(sign);
     }
-    void Dump(int value) const override{}
-    void Dump(string & sign1, string & sign2,string & sign)const override{}
     [[nodiscard]] int calc() const override {return Exp->calc();}
 };
 
 class ConstExpAST : public BaseAST {
   public:
     unique_ptr<BaseAST>Exp;
-    void Dump() const override{}
-    void Dump(string &sign) const override {} 
-    void Dump(int value) const override{}
-    void Dump(string &sign1,string &sign2,string &sign) const override{}
     [[nodiscard]] int calc() const override{
         return Exp->calc();
     }

@@ -51,7 +51,7 @@ using namespace std;
 %type <ast_val> VarDecl SinVarDef MulVarDef InitVal SinExp 
 %type <ast_val> IfStmt SinIfStmt MultElseStmt WhileStmt WhileStmtHead InWhile
 %type <ast_val> GlobalDecl FuncFParams ParaType MulFuncFParam SinFuncFParam 
-%type <ast_val> FuncExp ExistPara ExistSin ExistMul SinCompUnit CompUnit1
+%type <ast_val> FuncExp Params SinParams SinCompUnit MultCompUnit
 %type <int_val> Number 
 
 %%
@@ -62,25 +62,22 @@ using namespace std;
 // 此时我们应该把 FuncDef 返回的结果收集起来, 作为 AST 传给调用 parser 的函数
 // $1 指代规则里第一个符号的返回值, 也就是 FuncDef 的返回值
 CompUnit
-  : CompUnit1 {
+  : MultCompUnit {
     auto comp_unit = make_unique<CompUnitAST>();
-    comp_unit->func_def = unique_ptr<BaseAST>($1);
+    comp_unit->multCompUnit = unique_ptr<BaseAST>($1);
     ast = move(comp_unit);
   } 
   ;
 
-CompUnit1
+MultCompUnit
   : SinCompUnit {
-    auto ast = new CompUnit1AST();
-    ast->func_def = unique_ptr<BaseAST>($1);
-    ast->type = 0;
+    auto ast = new MultCompUnitAST();
+    ast->sinCompUnit.push_back(unique_ptr<BaseAST>($1));
     $$ = ast;
-  } |   CompUnit1  SinCompUnit {
-    auto comp_unit = new CompUnit1AST();
-    comp_unit->func_def = unique_ptr<BaseAST>($2);
-    comp_unit->mul = unique_ptr<BaseAST>($1);
-    comp_unit->type = 1;
-    $$ = comp_unit;
+  } | MultCompUnit  SinCompUnit {
+    auto ast = (MultCompUnitAST*)($1);
+    ast->sinCompUnit.push_back(unique_ptr<BaseAST>($2));
+    $$ = ast;
   }
   ;
 
@@ -88,13 +85,13 @@ CompUnit1
 SinCompUnit
   : GlobalDecl {
     auto ast = new SinCompUnitAST();
-    ast->func_def = unique_ptr<BaseAST>($1);
-    ast->type = 0;
+    ast->glob_def = unique_ptr<BaseAST>($1);
+    ast->type = COMP_GLO;
     $$ = ast;
   } | FuncDef {
     auto ast = new SinCompUnitAST();
     ast->func_def = unique_ptr<BaseAST>($1);
-    ast->type = 1;
+    ast->type = COMP_FUNC;
     $$ = ast;
   }
 
@@ -119,20 +116,12 @@ GlobalDecl
 // 虽然此处你看不出用 unique_ptr 和手动 delete 的区别, 但当我们定义了 AST 之后
 // 这种写法会省下很多内存管理的负担
 FuncDef
-  : FuncType IDENT '(' ')' Block {
-    auto ast = new FuncDefAST();
-    ast->func_type = unique_ptr<BaseAST>($1);
-    ast->ident = *unique_ptr<string>($2);
-    ast->block = unique_ptr<BaseAST>($5);
-    ast->type = NO_PARA;
-    $$ = ast;
-  } | FuncType IDENT '(' FuncFParams')' Block {
+  : FuncType IDENT '(' FuncFParams')' Block {
     auto ast = new FuncDefAST();
     ast->func_type = unique_ptr<BaseAST>($1);
     ast->ident = *unique_ptr<string>($2);
     ast->FuncFParams = unique_ptr<BaseAST>($4);
     ast->block = unique_ptr<BaseAST>($6);
-    ast->type = PARA;
     $$ = ast;
   }
   ;
@@ -140,17 +129,17 @@ FuncDef
 FuncFParams 
   : SinFuncFParam {
     auto ast = new FuncFParamsAST();
-    ast->para = unique_ptr<BaseAST>($1);
-    ast->type = FUNC_SIN;
+    ast->para.push_back(unique_ptr<BaseAST>($1));
     $$ = ast;
-  } | MulFuncFParam {
+  } | FuncFParams ',' SinFuncFParam {
+    auto ast = (FuncFParamsAST *)($1);
+    ast->para.push_back(unique_ptr<BaseAST>($3));
+    $$ = ast;
+  } | {
     auto ast = new FuncFParamsAST();
-    ast->para = unique_ptr<BaseAST>($1);
-    ast->type = FUNC_MUL;
     $$ = ast;
   }
   ;
-
 
 SinFuncFParam
   : ParaType IDENT {
@@ -161,27 +150,17 @@ SinFuncFParam
   }
   ;
 
-
-MulFuncFParam
-  : SinFuncFParam ',' FuncFParams {
-      auto ast = new MulFuncFParamAST();
-      ast->sin_para = unique_ptr<BaseAST>($1);
-      ast->mul_para = unique_ptr<BaseAST>($3);
-      $$ = ast;
-  }
-  ;
-
 // 同上, 不再解释
 FuncType
   : INT {
     auto ast = new FuncTypeAST();
     //ast->flag = unique_ptr<BaseAST>($1);
-    ast->type = 0;
+    ast->type = FUNCTYPE_INT;
     $$ = ast;
   } | VOID {
     auto ast = new FuncTypeAST();
     //ast->flag = unique_ptr<BaseAST>($1);
-    ast->type = 1;
+    ast->type = FUNCTYPE_VOID;
     $$ = ast;
     
   }
@@ -541,21 +520,21 @@ RelExp
 
 RelOp 
   : '<' {
-auto ast  = new RelOpAST();
-ast->type = RELOPAST_L;
-$$        = ast;
-  } | '>' {
-auto ast  = new RelOpAST();
-ast->type = RELOPAST_G;
-$$        = ast;
-  } | LE  {
-auto ast  = new RelOpAST();
-ast->type = RELOPAST_LE;
-$$        = ast;
-  } | GE  {
-auto ast  = new RelOpAST();
-ast->type = RELOPAST_GE;
-$$        = ast;
+    auto ast  = new RelOpAST();
+    ast->type = RELOPAST_L;
+    $$        = ast;
+      } | '>' {
+    auto ast  = new RelOpAST();
+    ast->type = RELOPAST_G;
+    $$        = ast;
+      } | LE  {
+    auto ast  = new RelOpAST();
+    ast->type = RELOPAST_LE;
+    $$        = ast;
+      } | GE  {
+    auto ast  = new RelOpAST();
+    ast->type = RELOPAST_GE;
+    $$        = ast;
   }
   ;
 
@@ -652,49 +631,37 @@ UnaryExp
   }
   ;
 
-  
-FuncExp  
-  : IDENT '(' ')'{
-    auto ast = new FuncExpAST_F();
+
+FuncExp
+  : IDENT '(' Params ')' {
+    auto ast = new FuncExpAST();
     ast->ident = *unique_ptr<string>($1);
-    ast->type = NO_PARA;
-    $$ = ast;
-  } | IDENT '(' ExistPara ')'{
-    auto ast = new FuncExpAST_F();
-    ast->ident = *unique_ptr<string>($1);
-    ast->type = PARA;
-    ast->para = unique_ptr<BaseAST>($3);
-    $$ = ast;
+    ast->para  = unique_ptr<BaseAST>($3);
+    $$       = ast;
   }
   ;
 
 
-ExistPara
-  : ExistSin {
-    auto ast= new ExistParaAST();
-    ast->para = unique_ptr<BaseAST>($1);
+Params
+  : SinParams {
+    auto ast= new ParamsAST();
+    ast->sinParams.push_back(unique_ptr<BaseAST>($1));
     $$ = ast;
-  } | ExistMul {
-    auto ast = new ExistParaAST();
-    ast->para = unique_ptr<BaseAST>($1);
+  } | Params ',' SinParams {
+    auto ast = (ParamsAST *)($1);
+    ast->sinParams.push_back(unique_ptr<BaseAST>($3));
     $$ = ast;
+  } | {
+    auto ast = new ParamsAST();
+    $$       = ast;
   }
   ;
 
-ExistSin 
+SinParams 
   : Exp {
-    auto ast = new ExistSinAST();
+    auto ast = new SinParamsAST();
     ast->exp = unique_ptr<BaseAST>($1);
     $$  = ast;
-  }
-  ;
-
-ExistMul 
-  : ExistPara ',' ExistSin {
-    auto ast = new ExistMulAST();
-    ast->sin = unique_ptr<BaseAST>($3);
-    ast->mul = unique_ptr<BaseAST>($1);
-    $$ = ast;
   }
   ;
 
@@ -741,16 +708,6 @@ MulOp
     $$       = ast;
   }
   ;
-
-//stmt -> if (Exp) stmt Else  
-
-// Else-> else stmt | ;
-//
-
-
-
-
-
 %%
 
 // 定义错误处理函数, 其中第二个参数是错误信息

@@ -31,7 +31,11 @@ class IdentTableNode {
         }  
 };
 
+
 class FuncTable{
     public:
     unordered_map<string,bool> FuncTable; //bool表示函数是否存在返回值
+    unordered_map<int,vector<string>> registerTable;
+    unordered_map<int,string> FuncRank;
 };
+
