@@ -377,12 +377,13 @@ class FuncExpAST : public BaseAST {
     void Dump(string &sign) const override {
       vector<string> ParaSign;
       para->Dump(sign,ParaSign);
+      funcTable.init();
       if(funcTable.FuncTable.at(ident)){
       alloc_now++;
       sign = "%"+to_string(alloc_now);
       cout<<"\t"<<sign<<" = ";
       }
-        cout<<"call @";
+        cout<<"  call @";
         cout<<ident;
         cout<<"(";
         for(auto it = ParaSign.begin(); it != ParaSign.end();it++) {

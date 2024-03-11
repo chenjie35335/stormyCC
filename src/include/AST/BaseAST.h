@@ -106,6 +106,15 @@ class CompUnitAST : public BaseAST {
   // 用智能指针管理对象
   std::unique_ptr<BaseAST> multCompUnit;
   void Dump() const override {
+    printf("decl @getint(): i32\n");
+    printf("decl @getch(): i32\n");
+    printf("decl @getarray(*i32): i32\n");
+    printf("decl @putint(i32)\n");
+    printf("decl @putch(i32)\n");
+    printf("decl @putarray(i32, *i32)\n");
+    printf("decl @starttime()\n");
+    printf("decl @stoptime()\n");
+    cout<<endl;
     //cout << "enter CompUnit" << endl;
     IdentTable = new IdentTableNode();
     ScopeLevel = 0;

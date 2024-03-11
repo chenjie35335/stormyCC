@@ -105,6 +105,7 @@ public:
         {
           if(sign == DECL_GLOB) {
             cout << "global @"+ident+"_"+to_string(dep) <<" = " << "alloc i32," <<  " "<<InitVal->calc() << endl;  
+            cout<<endl;
           }else {
           cout << "  @"+ident+"_"+to_string(dep) <<" = " << "alloc i32" << endl;
           InitVal->Dump(sign1);

@@ -37,5 +37,16 @@ class FuncTable{
     unordered_map<string,bool> FuncTable; //bool表示函数是否存在返回值
     unordered_map<int,vector<string>> registerTable;
     unordered_map<int,string> FuncRank;
+
+     void init() {
+        FuncTable["getch"] = true;
+        FuncTable["getint"] = true;
+        FuncTable["getarrary"] = true;
+        FuncTable["putint"] = false;
+        FuncTable["putch"] = false;
+        FuncTable["putarrary"] = false;
+        FuncTable["starttime"] = false;
+        FuncTable["stoptime"] = false;
+    }
 };
 

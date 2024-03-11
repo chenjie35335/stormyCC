@@ -29,15 +29,17 @@ int main(int argc, const char *argv[]) {
   auto ret = yyparse(ast);
   assert(!ret);
 
+
   // 输出解析得到的 AST, 其实就是个字符串
   if(strcmp(mode,"-koopa") == 0 || strcmp(mode,"-riscv") == 0) {
-  freopen(output,"w",stdout);
-  ast->Dump();
+    freopen(output,"w",stdout);
+    ast->Dump();
   }
+
   if(strcmp(mode,"-riscv") == 0){
-    std::FILE* f = fopen(output,"r");
+    std::FILE* f1 = fopen(output,"r");
     char * str = (char *) malloc(sizeof(char) * 100000);
-    fread(str,sizeof(char),100000,f);
+    fread(str,sizeof(char),100000,f1);
       backend(str,output);
   }
   return 0;
