@@ -21,6 +21,7 @@ using namespace std;
 
 %}
 
+%start CompUnit
 // 定义 parser 函数和错误处理函数的附加参数
 // 我们需要返回一个字符串作为 AST, 所以我们把附加参数定义成字符串的智能指针
 // 解析完成后, 我们要手动修改这个参数, 把它设置成解析得到的字符串
@@ -50,7 +51,7 @@ using namespace std;
 %type <ast_val> SinConstDef ConstExp Btype MulBlockItem SinBlockItem LValL LValR
 %type <ast_val> VarDecl SinVarDef MulVarDef InitVal SinExp 
 %type <ast_val> IfStmt SinIfStmt MultElseStmt WhileStmt WhileStmtHead InWhile
-%type <ast_val> GlobalDecl FuncFParams ParaType MulFuncFParam SinFuncFParam 
+%type <ast_val> FuncFParams ParaType SinFuncFParam 
 %type <ast_val> FuncExp Params SinParams SinCompUnit MultCompUnit
 %type <int_val> Number 
 
@@ -74,7 +75,7 @@ MultCompUnit
     auto ast = new MultCompUnitAST();
     ast->sinCompUnit.push_back(unique_ptr<BaseAST>($1));
     $$ = ast;
-  } | MultCompUnit  SinCompUnit {
+  } |  MultCompUnit SinCompUnit {
     auto ast = (MultCompUnitAST*)($1);
     ast->sinCompUnit.push_back(unique_ptr<BaseAST>($2));
     $$ = ast;
@@ -83,45 +84,32 @@ MultCompUnit
 
 
 SinCompUnit
-  : GlobalDecl {
+  : ConstDecl {
     auto ast = new SinCompUnitAST();
-    ast->glob_def = unique_ptr<BaseAST>($1);
-    ast->type = COMP_GLO;
+    ast->constGlobal = unique_ptr<BaseAST>($1);
+    ast->type = COMP_CON;
     $$ = ast;
-  } | FuncDef {
+  } | FuncType FuncDef {
     auto ast = new SinCompUnitAST();
-    ast->func_def = unique_ptr<BaseAST>($1);
+    ast->funcType = unique_ptr<BaseAST>($1); 
+    ast->funcDef = unique_ptr<BaseAST>($2);
     ast->type = COMP_FUNC;
     $$ = ast;
-  }
-
-
-//maybe array
-GlobalDecl
-  : Decl {
-    auto ast = new GlobalDeclAST();
-    ast->global = unique_ptr<BaseAST>($1);
+  } | FuncType VarDecl{
+    auto ast = new SinCompUnitAST();
+    ast->funcType = unique_ptr<BaseAST>($1); 
+    ast->varGlobal = unique_ptr<BaseAST>($2);
+    ast->type = COMP_VAR;
     $$ = ast;
   }
   ;
 
-// FuncDef ::= FuncType IDENT '(' ')' Block;
-// 我们这里可以直接写 '(' 和 ')', 因为之前在 lexer 里已经处理了单个字符的情况
-// 解析完成后, 把这些符号的结果收集起来, 然后拼成一个新的字符串, 作为结果返回
-// $$ 表示非终结符的返回值, 我们可以通过给这个符号赋值的方法来返回结果
-// 你可能会问, FuncType, IDENT 之类的结果已经是字符串指针了
-// 为什么还要用 unique_ptr 接住它们, 然后再解引用, 把它们拼成另一个字符串指针呢
-// 因为所有的字符串指针都是我们 new 出来的, new 出来的内存一定要 delete
-// 否则会发生内存泄漏, 而 unique_ptr 这种智能指针可以自动帮我们 delete
-// 虽然此处你看不出用 unique_ptr 和手动 delete 的区别, 但当我们定义了 AST 之后
-// 这种写法会省下很多内存管理的负担
 FuncDef
-  : FuncType IDENT '(' FuncFParams')' Block {
+  : IDENT '(' FuncFParams')' Block {
     auto ast = new FuncDefAST();
-    ast->func_type = unique_ptr<BaseAST>($1);
-    ast->ident = *unique_ptr<string>($2);
-    ast->FuncFParams = unique_ptr<BaseAST>($4);
-    ast->block = unique_ptr<BaseAST>($6);
+    ast->ident = *unique_ptr<string>($1);
+    ast->FuncFParams = unique_ptr<BaseAST>($3);
+    ast->block = unique_ptr<BaseAST>($5);
     $$ = ast;
   }
   ;
@@ -154,15 +142,12 @@ SinFuncFParam
 FuncType
   : INT {
     auto ast = new FuncTypeAST();
-    //ast->flag = unique_ptr<BaseAST>($1);
     ast->type = FUNCTYPE_INT;
     $$ = ast;
   } | VOID {
     auto ast = new FuncTypeAST();
-    //ast->flag = unique_ptr<BaseAST>($1);
     ast->type = FUNCTYPE_VOID;
     $$ = ast;
-    
   }
   ;
 
@@ -173,16 +158,15 @@ ParaType
   }
   ;
 
-
 Decl
   : ConstDecl {
     auto ast       = new DeclAST();
     ast->ConstDecl = unique_ptr<BaseAST>($1);
     ast->type      = DECLAST_CON;
     $$             = ast;
-  } | VarDecl {
+  } | Btype VarDecl {
     auto ast       = new DeclAST();
-    ast->VarDecl   = unique_ptr<BaseAST>($1);
+    ast->VarDecl   = unique_ptr<BaseAST>($2);
     ast->type      = DECLAST_VAR;
     $$             = ast;
   }
@@ -222,9 +206,9 @@ SinConstDef
   ;
 
 VarDecl
-  : Btype MulVarDef ';'{
+  : MulVarDef ';'{
        auto ast     = new VarDeclAST();
-       ast->MulVarDef = unique_ptr<BaseAST>($2);
+       ast->MulVarDef = unique_ptr<BaseAST>($1);
        $$           = ast;
   }
   ;
@@ -253,12 +237,6 @@ SinVarDef
     ast->ident = *unique_ptr<string>($1);
     ast->InitVal= unique_ptr<BaseAST>($3);
     $$         = ast;
-  } | IDENT '=' FuncExp {
-    auto ast = new SinVarDefAST();
-    ast->type = SINVARDEFAST_FUNC;
-    ast->ident = *unique_ptr<string>($1);
-    ast->func_exp = unique_ptr<BaseAST>($3);
-    $$ = ast;
   } 
   ;
 
@@ -286,6 +264,19 @@ Btype
     $$        = ast;
   }
   ;
+
+// FuncDef ::= FuncType IDENT '(' ')' Block;
+// 我们这里可以直接写 '(' 和 ')', 因为之前在 lexer 里已经处理了单个字符的情况
+// 解析完成后, 把这些符号的结果收集起来, 然后拼成一个新的字符串, 作为结果返回
+// $$ 表示非终结符的返回值, 我们可以通过给这个符号赋值的方法来返回结果
+// 你可能会问, FuncType, IDENT 之类的结果已经是字符串指针了
+// 为什么还要用 unique_ptr 接住它们, 然后再解引用, 把它们拼成另一个字符串指针呢
+// 因为所有的字符串指针都是我们 new 出来的, new 出来的内存一定要 delete
+// 否则会发生内存泄漏, 而 unique_ptr 这种智能指针可以自动帮我们 delete
+// 虽然此处你看不出用 unique_ptr 和手动 delete 的区别, 但当我们定义了 AST 之后
+// 这种写法会省下很多内存管理的负担
+
+
 
 Block
   : '{' MulBlockItem '}' {
@@ -717,17 +708,16 @@ MulOp
 //}
 void yyerror(std::unique_ptr<BaseAST> &ast, const char *s) {
   
-    extern int yylineno;    // defined and maintained in lex
-    extern char *yytext;    // defined and maintained in lex
-    int len=strlen(yytext);
-    int i;
-    char buf[512]={0};
-    for (i=0;i<len;++i)
-    {
-        sprintf(buf,"%s%d ",buf,yytext[i]);
-    }
-    fprintf(stderr, "ERROR: %s at symbol '%s' on line %d\n", s, buf, yylineno);
-
+        extern int yylineno;    // defined and maintained in lex
+        extern char *yytext;    // defined and maintained in lex
+        int len=strlen(yytext);
+        int i;
+        char buf[512]={0};
+        for (i=0;i<len;++i)
+        {
+            sprintf(buf,"%s%d ",buf,yytext[i]);
+        }
+        fprintf(stderr, "ERROR: %s at symbol '%s' on line %d\n", s, buf, yylineno);
 }
 
 

@@ -63,9 +63,12 @@ enum{
   FUNC_MUL,
   FUNC_EXP,
   COMP_FUNC,
-  COMP_GLO,
+  COMP_CON,
+  COMP_VAR,
   FUNCTYPE_INT,
-  FUNCTYPE_VOID
+  FUNCTYPE_VOID,
+  DECL_LOC,
+  DECL_GLOB
 }Kind;
 
 extern int ScopeLevel;
@@ -95,6 +98,7 @@ class BaseAST {
   //这个用来带有双目运算符的遍历
   virtual void Dump(string &sign,vector<string> &Para) const{};
   [[nodiscard]] virtual int calc() const {return 0;}//计算表达式的值
+  virtual void Dump(int sign) const {};//这个用于函数时候判断参数
 };
 
 class CompUnitAST : public BaseAST {
@@ -102,6 +106,7 @@ class CompUnitAST : public BaseAST {
   // 用智能指针管理对象
   std::unique_ptr<BaseAST> multCompUnit;
   void Dump() const override {
+    //cout << "enter CompUnit" << endl;
     IdentTable = new IdentTableNode();
     ScopeLevel = 0;
     IdentTable->level = ScopeLevel;
@@ -120,6 +125,7 @@ class MultCompUnitAST : public BaseAST {
   vector<unique_ptr<BaseAST>> sinCompUnit;
   void Dump() const override {
     for(auto &sinComp : sinCompUnit) {
+      //cout << "enter MultiCompUnit" << endl;
       sinComp->Dump();
     }
   }
@@ -131,17 +137,25 @@ class MultCompUnitAST : public BaseAST {
 
 class SinCompUnitAST : public BaseAST {
  public:
-    std::unique_ptr<BaseAST> func_def;
-    std::unique_ptr<BaseAST> glob_def;
+    unique_ptr<BaseAST> constGlobal;
+    unique_ptr<BaseAST> funcDef;
+    unique_ptr<BaseAST> varGlobal;
+    unique_ptr<BaseAST> funcType;
     int type;
     void Dump() const override {
       switch(type){
-        case COMP_FUNC: 
-            func_def->Dump();
+        case COMP_FUNC: {
+            int type = funcType->calc();
+            funcDef->Dump(type);
             break;
-        case COMP_GLO:
-            //glob_def->Dump();
+        }
+        case COMP_CON:
+            constGlobal->Dump();
             break;
+        case COMP_VAR:{
+            varGlobal->Dump(DECL_GLOB);
+            break;
+        }
         default:
             assert(0);
       }

@@ -124,5 +124,10 @@ riscv-test:
 	ld.lld hello.o -L$$CDE_LIBRARY_PATH/riscv32 -lsysy -o hello
 	qemu-riscv32-static hello
 
+commit:
+	git add .
+	git commit -m "$(COMMENT)"
+	git push
+
 
 -include $(DEPS)

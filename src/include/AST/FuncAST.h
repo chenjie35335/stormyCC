@@ -3,11 +3,10 @@
 class FuncDefAST : public BaseAST
 {
 public:
-  std::unique_ptr<BaseAST> func_type;
   std::string ident;
   std::unique_ptr<BaseAST> block;
   std::unique_ptr<BaseAST> FuncFParams;
-  void Dump() const override
+  void Dump(int sign) const override
   {
     alloc_now = -1;
     cout << "fun ";
@@ -22,9 +21,11 @@ public:
     FuncFParams->Dump();
     cout << ")";
     IdentTable = IdentTable->father;
-    int ret_type = func_type->calc();
-    if (ret_type == FUNCTYPE_INT)
+    int ret_type = sign;
+    if (ret_type == FUNCTYPE_INT){
+      cout << ": i32 ";
       funcTable.FuncTable.insert(pair<string, bool>(ident, true));
+    }
     else
       funcTable.FuncTable.insert(pair<string, bool>(ident, false));
     cout << "{" << endl;
@@ -54,16 +55,6 @@ public:
   int type;
   [[nodiscard]] int calc() const override
   {
-    switch (type)
-    {
-    case FUNCTYPE_INT:
-      cout << ": i32 ";
-      break;
-    case FUNCTYPE_VOID:
-      break;
-    default:
-      assert(0);
-    }
     return type;
   }
 };
@@ -107,17 +98,3 @@ public:
   }
 };
 
-// global vare
-class GlobalDeclAST : public BaseAST
-{
-  public:
-    std::unique_ptr<BaseAST> global;
-    // std::unique_ptr<BaseAST> mul;
-    void Dump() const override
-    {
-      cout << "global"
-          << " ";
-      global->Dump();
-      cout << endl;
-    } 
-};

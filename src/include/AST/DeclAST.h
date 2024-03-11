@@ -9,7 +9,7 @@ class DeclAST : public BaseAST {
       //cout<< "declinto" << endl; 
         switch(type) {
             case DECLAST_CON: ConstDecl->Dump(); break;
-            case DECLAST_VAR: VarDecl->Dump(); break;
+            case DECLAST_VAR: VarDecl->Dump(DECL_LOC); break;
             default: assert(0);
         }
     }
@@ -58,17 +58,17 @@ class SinConstDefAST : public BaseAST{
 class VarDeclAST : public BaseAST {
 public:
      unique_ptr <BaseAST> MulVarDef;
-     void Dump() const override{
-        MulVarDef->Dump();
+     void Dump(int sign) const override{
+        MulVarDef->Dump(sign);
      }
 };
 
 class MulVarDefAST : public BaseAST {
 public:
     vector <unique_ptr<BaseAST>> SinValDef;
-    void Dump() const override{
+    void Dump(int sign) const override{
       for(auto &sinValDef : SinValDef) {
-          sinValDef->Dump();
+          sinValDef->Dump(sign);
       }
     }
 };
@@ -79,7 +79,7 @@ public:
     unique_ptr<BaseAST>InitVal;
     unique_ptr<BaseAST>func_exp;
     uint32_t type;
-    void Dump() const override{
+    void Dump(int sign) const override{
       //cout<< "sinconstdef" << endl;
       int value;
       auto &ValueTable = IdentTable->ConstTable;
@@ -93,27 +93,26 @@ public:
           cerr << '"' << ident << '"' << " redefined" <<endl;
           exit(-1);
         }
-      cout << "  @"+ident+"_"+to_string(dep) <<" = " << "alloc i32" << endl;
-      string sign;
+      string sign1;
       switch(type) {
         //we need add type
-        case SINVARDEFAST_UIN: break;
+        case SINVARDEFAST_UIN: {
+          if(sign == DECL_GLOB) 
+            cout << "global @"+ident+"_"+to_string(dep) <<" = " << "alloc i32," <<  " zeroinit" << endl;
+              break;
+        }
         case SINVARDEFAST_INI:
         {
-          //cout<<"hello"<<endl;
-          InitVal->Dump(sign);
-          cout << "  store " << sign<< ", " << "@"+ident+"_"+to_string(dep)<<endl;
+          if(sign == DECL_GLOB) {
+            cout << "global @"+ident+"_"+to_string(dep) <<" = " << "alloc i32," <<  " "<<InitVal->calc() << endl;  
+          }else {
+          cout << "  @"+ident+"_"+to_string(dep) <<" = " << "alloc i32" << endl;
+          InitVal->Dump(sign1);
+          cout << "  store " << sign1<< ", " << "@"+ident+"_"+to_string(dep)<<endl;
+          }
           break;
         }
-        case SINVARDEFAST_FUNC:{
-          //if(alloc_now < 0) alloc_now = 0;
-          // alloc_now++;
-          // cout<<"\t%"<<alloc_now<<" = ";
-          func_exp->Dump(sign);
-          cout << "  store " << sign <<", @"<<ident<<"_"<<to_string(dep)<<endl;
-          //alloc_now++;
-          break;
-        }
+        default: assert(0);
       }
       VarTable.insert(pair<string,int>(ident,value));
     }
@@ -134,4 +133,19 @@ class ConstExpAST : public BaseAST {
     [[nodiscard]] int calc() const override{
         return Exp->calc();
     }
+};
+
+// global vare
+class GlobalDeclAST : public BaseAST
+{
+  public:
+    std::unique_ptr<BaseAST> global;
+    // std::unique_ptr<BaseAST> mul;
+    void Dump() const override
+    {
+      cout << "global"
+          << " ";
+      global->Dump();
+      cout << endl;
+    } 
 };
