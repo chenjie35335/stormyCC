@@ -3,16 +3,28 @@
 class LValLAST : public BaseAST {
   public:
     string ident;
+    int type;
+    std::unique_ptr<BaseAST> array;
     void Dump(string &sign) const override {
+      if(type == 0)
       sign = ident;
+      else {
+        array->Dump();
+      }
     }
 };
 
 class LValRAST : public BaseAST {
   public:
     string ident;
+    std::unique_ptr<BaseAST> array;
+    int type;
     void Dump() const override {}
     void Dump(string &sign) const override {
+      if(type == 1){
+        array->Dump(sign);
+        return;
+      }
       auto p = IdentTable;
       while(p != nullptr) {
       auto &ValueTable = p->ConstTable;

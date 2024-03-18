@@ -23,6 +23,7 @@ enum{
   ADDMUL,
   DECLAST_CON,
   DECLAST_VAR,
+  DECLAST_ARR,
   MULEXPAST_UNA,
   MULEXPAST_MUL,
   LOREXPAST_LAN,
@@ -43,6 +44,8 @@ enum{
   SINBLOCKITEM_STM,
   SINVARDEFAST_UIN,
   SINVARDEFAST_INI,
+  SINVARDEFAST_INI_ARR,
+  SINVARDEFAST_UNI_ARR,
   SINVARDEFAST_FUNC,
   STMTAST_RET,
   STMTAST_LVA,
@@ -65,6 +68,7 @@ enum{
   COMP_FUNC,
   COMP_CON,
   COMP_VAR,
+  COMP_ARR,
   FUNCTYPE_INT,
   FUNCTYPE_VOID,
   DECL_LOC,
@@ -165,10 +169,13 @@ class SinCompUnitAST : public BaseAST {
             varGlobal->Dump(DECL_GLOB);
             break;
         }
+        case COMP_ARR: {
+            varGlobal->Dump(DECL_GLOB);
+            break;
+        }
         default:
             assert(0);
-      }
-      
+      } 
     }
     [[nodiscard]] int calc() const override{return type;}
 };

@@ -16,6 +16,7 @@
 #include <LValAST.h>
 #include <OpAST.h>
 #include <StmtAST.h>
+#include <ArrayAST.h>
 
 #include <ValueTable.h>
 using namespace std;

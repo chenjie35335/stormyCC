@@ -383,7 +383,7 @@ class FuncExpAST : public BaseAST {
       sign = "%"+to_string(alloc_now);
       cout<<"\t"<<sign<<" = ";
       }
-        cout<<"  call @";
+        cout<<"call @";
         cout<<ident;
         cout<<"(";
         for(auto it = ParaSign.begin(); it != ParaSign.end();it++) {

@@ -4,12 +4,14 @@ class DeclAST : public BaseAST {
   public:
     std::unique_ptr<BaseAST> ConstDecl;
     std::unique_ptr<BaseAST> VarDecl;
+    std::unique_ptr<BaseAST> arrDef;
     uint32_t type;
     void Dump() const override {
       //cout<< "declinto" << endl; 
         switch(type) {
             case DECLAST_CON: ConstDecl->Dump(); break;
             case DECLAST_VAR: VarDecl->Dump(DECL_LOC); break;
+            case DECLAST_ARR: arrDef->Dump(); break;
             default: assert(0);
         }
     }
@@ -19,8 +21,14 @@ class ConstDeclAST : public BaseAST {
   public:
     std::unique_ptr<BaseAST> Btype;
     std::unique_ptr<BaseAST> MulConstDef;
+    std::unique_ptr<BaseAST> arrDef;
+    int type;
     void Dump() const override {
-       MulConstDef->Dump();
+      if(type){
+        arrDef->Dump();
+      } else {
+        MulConstDef->Dump();
+      } 
     }
 };
 
@@ -43,6 +51,7 @@ class SinConstDefAST : public BaseAST{
   public:
     string ident;
     unique_ptr<BaseAST>ConstExp;
+    unique_ptr<BaseAST> arrDef;
     void Dump() const override{
       //cout<< "sinconstdef" << endl;
       auto &ValueTable = IdentTable->ConstTable;
@@ -78,6 +87,8 @@ public:
     string ident;
     unique_ptr<BaseAST>InitVal;
     unique_ptr<BaseAST>func_exp;
+    unique_ptr<BaseAST>ConstInit;
+    unique_ptr<BaseAST>dimen;
     uint32_t type;
     void Dump(int sign) const override{
       //cout<< "sinconstdef" << endl;
@@ -107,9 +118,75 @@ public:
             cout << "global @"+ident+"_"+to_string(dep) <<" = " << "alloc i32," <<  " "<<InitVal->calc() << endl;  
             cout<<endl;
           }else {
-          cout << "  @"+ident+"_"+to_string(dep) <<" = " << "alloc i32" << endl;
-          InitVal->Dump(sign1);
-          cout << "  store " << sign1<< ", " << "@"+ident+"_"+to_string(dep)<<endl;
+            cout << "  @"+ident+"_"+to_string(dep) <<" = " << "alloc i32" << endl;
+            InitVal->Dump(sign1);
+            cout << "  store " << sign1<< ", " << "@"+ident+"_"+to_string(dep)<<endl;
+          }
+          break;
+        }
+        case SINVARDEFAST_UNI_ARR:
+        {
+          string sign2;
+          vector<string> Para;
+          dimen->Dump(sign2,Para);
+          string res;
+
+          for(auto it = Para.rbegin(); it < Para.rend(); ++it){
+            //cout<<"520";
+            if(it == Para.rbegin()){
+              res.append("[");
+              res.append("i32");
+              res.append(", ");
+              res.append(*it);
+              res.append("]");
+            } else {
+              res.insert(0,"[");
+              res.append(", ");
+              res.append(*it);
+              res.append("]");
+            }
+          }
+          //cout<<res<<" ";
+
+          if(sign == DECL_GLOB){
+            cout << "global @"+ident+"_"+to_string(dep) <<" = " << "alloc " << res <<"," <<" zeroinit" << endl;
+            cout<<endl;
+          } else {
+            cout<< "  @" + ident +"_" + to_string(dep) <<" = " << "alloc " << res <<endl;
+          }
+          break;
+        }
+        case SINVARDEFAST_INI_ARR:
+        {
+          string sign3,sign4;
+          vector<string> Para;
+          dimen->Dump(sign3,Para);
+          string res;
+          for(auto it = Para.rbegin(); it < Para.rend(); ++it){
+            //cout<<"520";
+            if(it == Para.rbegin()){
+              res.append("[");
+              res.append("i32");
+              res.append(", ");
+              res.append(*it);
+              res.append("]");
+            } else {
+              res.insert(0,"[");
+              res.append(", ");
+              res.append(*it);
+              res.append("]");
+            }
+          }
+          //cout<<res<<" ";
+          Para.clear();
+          ConstInit->Dump(sign4,Para);
+          if(sign == DECL_GLOB) {
+            cout << "global @"+ident+"_"+to_string(dep) <<" = " << "alloc " << res<<"," << " "<<sign4<< endl;  
+            cout<<endl;
+          }else {
+            cout << "  @"+ident+"_"+to_string(dep) <<" = " << "alloc "<< res <<", "<< endl;
+            //ConstInit->Dump(sign1);
+            cout << "  store " << sign4<< ", " << "@"+ident+"_"+to_string(dep)<<endl;
           }
           break;
         }

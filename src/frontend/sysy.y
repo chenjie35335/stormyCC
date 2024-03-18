@@ -51,8 +51,10 @@ using namespace std;
 %type <ast_val> SinConstDef ConstExp Btype MulBlockItem SinBlockItem LValL LValR
 %type <ast_val> VarDecl SinVarDef MulVarDef InitVal SinExp 
 %type <ast_val> IfStmt SinIfStmt MultElseStmt WhileStmt WhileStmtHead InWhile
-%type <ast_val> FuncFParams ParaType SinFuncFParam 
+%type <ast_val> FuncFParams ParaType SinFuncFParam MulArrPara MulLValL 
 %type <ast_val> FuncExp Params SinParams SinCompUnit MultCompUnit
+%type <ast_val> ConstArrayDef ArrayDimen MulArrayDimen ConstArrayVar 
+%type <ast_val> ArrayContent MulArraycontent ArrPara 
 %type <int_val> Number 
 
 %%
@@ -100,6 +102,12 @@ SinCompUnit
     ast->funcType = unique_ptr<BaseAST>($1); 
     ast->varGlobal = unique_ptr<BaseAST>($2);
     ast->type = COMP_VAR;
+    $$ = ast;
+  } | FuncType ConstDecl {
+    auto ast = new SinCompUnitAST();
+    ast->funcType = unique_ptr<BaseAST>($1);
+    ast->varGlobal = unique_ptr<BaseAST>($2);
+    ast->type  = COMP_ARR;
     $$ = ast;
   }
   ;
@@ -169,6 +177,11 @@ Decl
     ast->VarDecl   = unique_ptr<BaseAST>($2);
     ast->type      = DECLAST_VAR;
     $$             = ast;
+  } | Btype ConstArrayDef {
+    auto ast = new DeclAST();
+    ast->arrDef = unique_ptr<BaseAST>($2);
+    ast->type = DECLAST_ARR;
+    $$ = ast;
   }
   ;
 
@@ -177,7 +190,14 @@ ConstDecl
     auto ast        = new ConstDeclAST();
     ast->Btype      = unique_ptr<BaseAST>($2);
     ast->MulConstDef= unique_ptr<BaseAST>($3);
+    ast->type = 0;
     $$              = ast;
+  } | CONST Btype ConstArrayDef ';'{
+    auto ast = new ConstDeclAST();
+    ast->Btype      = unique_ptr<BaseAST>($2);
+    ast->arrDef = unique_ptr<BaseAST>($3);
+    ast->type = 1;
+    $$ = ast;
   }
   ;
 //这里使用的是一个递归的方法，但是我们发现这个方法如果实际采用的话，可能会导致树的极度不平衡
@@ -202,8 +222,90 @@ SinConstDef
       ast->ident    = *unique_ptr<string>($1);
       ast->ConstExp = unique_ptr<BaseAST>($3);
       $$            = ast;
+  } 
+  ;
+
+ConstArrayDef
+  : IDENT ArrayDimen '=' ConstArrayVar {
+    auto ast = new ConstArrayDefAST();
+    ast->ident = *unique_ptr<string>($1);
+    ast->dimension = unique_ptr<BaseAST>($2);
+    ast->arrayVar = unique_ptr<BaseAST>($4);
+    $$ = ast;
   }
   ;
+
+ArrayDimen
+  : '[' Exp ']' {
+    auto ast = new ArrayDimenAST();
+    ast->constExp = unique_ptr<BaseAST>($2);
+    ast->type = 0;
+    $$ = ast;
+  } | MulArrayDimen {
+    auto ast = new ArrayDimenAST();
+    ast->constExp = unique_ptr<BaseAST>($1);
+    ast->type = 1;
+    $$ = ast;
+  }
+  ;
+
+MulArrayDimen 
+  : '[' Exp ']' ArrayDimen {
+    auto ast = new MulArrayDimenAST();
+    ast->exp = unique_ptr<BaseAST>($2);
+    ast->dim = unique_ptr<BaseAST>($4);
+    $$ = ast;
+  } 
+  ;
+
+ConstArrayVar
+  : '{' ArrayContent '}' {
+    auto ast = new ConstArrayVarAST();
+    ast->content = unique_ptr<BaseAST>($2);
+    ast->type = 0;
+    $$ = ast;
+  } | '{' '}' {
+    auto ast = new ConstArrayVarAST();
+    ast->type = 1;
+    $$ = ast;
+  }
+  ;
+
+ArrayContent 
+  : ConstExp {
+    auto ast = new ArrayContentAST();
+    ast->var = unique_ptr<BaseAST>($1);
+    ast->type = 0;
+    $$ = ast;
+  } | MulArraycontent {
+    auto ast = new ArrayContentAST();
+    ast->var = unique_ptr<BaseAST>($1);
+    ast->type = 1;
+    $$ = ast;
+  } | ConstArrayVar {
+    auto ast = new ArrayContentAST();
+    ast->var = unique_ptr<BaseAST>($1);
+    ast->type = 2;
+    $$ = ast;
+  } //multi dimension array
+  ;
+
+
+MulArraycontent 
+  : ConstExp ',' ArrayContent {
+    auto ast = new MulArrayContentAST();
+    ast->sin = unique_ptr<BaseAST>($1);
+    ast->mul = unique_ptr<BaseAST>($3);
+    ast->type = 0;
+    $$ = ast;
+  } | ConstArrayVar ',' ArrayContent {
+    auto ast = new MulArrayContentAST();
+    ast->sin = unique_ptr<BaseAST>($1);
+    ast->mul = unique_ptr<BaseAST>($3);
+    ast->type = 1;
+  }
+  ;
+
 
 VarDecl
   : MulVarDef ';'{
@@ -237,7 +339,20 @@ SinVarDef
     ast->ident = *unique_ptr<string>($1);
     ast->InitVal= unique_ptr<BaseAST>($3);
     $$         = ast;
-  } 
+  } | IDENT ArrayDimen {
+    auto ast = new SinVarDefAST();
+    ast->type = SINVARDEFAST_UNI_ARR;
+    ast->ident = *unique_ptr<string>($1);
+    ast->dimen = unique_ptr<BaseAST>($2);
+    $$ = ast;
+  } | IDENT ArrayDimen '=' ConstArrayVar {
+    auto ast = new SinVarDefAST();
+    ast->type = SINVARDEFAST_INI_ARR;
+    ast->ident = *unique_ptr<string>($1);
+    ast->dimen = unique_ptr<BaseAST>($2);
+    ast->ConstInit = unique_ptr<BaseAST>($4);
+    $$ = ast;
+  }
   ;
 
 InitVal
@@ -561,18 +676,42 @@ MulExp
   }
   ;
 
+//maybe contain array
 LValL 
   : IDENT {
-      auto ast   = new LValLAST();
+      auto ast = new LValLAST();
       ast->ident = *unique_ptr<string>($1);
+      ast->type = 0;
+      $$ = ast;
+  } | MulLValL {
+      auto ast = new LValLAST();
+      ast->array = unique_ptr<BaseAST>($1);
+      ast->type = 1;
       $$ = ast;
   }
   ;
+
+MulLValL 
+  : IDENT ArrayDimen {
+      auto ast = new MulLValLAST();
+      ast->ident = *unique_ptr<string>($1);
+      ast->exp = unique_ptr<BaseAST>($2);
+      $$ = ast;
+  } 
+  ;
+
+
 
 LValR
   : IDENT {
     auto ast   = new LValRAST();
     ast->ident = *unique_ptr<string>($1);
+    ast->type = 0;
+    $$ = ast;
+  } | MulLValL {
+    auto ast = new LValRAST();
+    ast->array = unique_ptr<BaseAST>($1);
+    ast->type = 1;
     $$ = ast;
   }
   ;
