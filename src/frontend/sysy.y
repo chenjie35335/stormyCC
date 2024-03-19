@@ -142,6 +142,20 @@ SinFuncFParam
     auto ast = new SinFuncFParamAST();
     ast->ident = *unique_ptr<string>($2);
     ast->ParaType = unique_ptr<BaseAST>($1);
+    ast->type = PARA_VAR;
+    $$ = ast;
+  } | ParaType IDENT '[' ']'  {
+    auto ast = new SinFuncFParamAST();
+    ast->ident = *unique_ptr<string>($2);
+    ast->ParaType = unique_ptr<BaseAST>($1);
+    ast->type = PARA_ARR_SIN;
+    $$ = ast;
+  } | ParaType IDENT '[' ']' ArrayDimen {
+    auto ast = new SinFuncFParamAST();
+    ast->ident = *unique_ptr<string>($2);
+    ast->ParaType = unique_ptr<BaseAST>($1);
+    ast->Dimen = unique_ptr<BaseAST>($5);
+    ast->type = PARA_ARR_MUL;
     $$ = ast;
   }
   ;

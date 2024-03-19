@@ -72,7 +72,10 @@ enum{
   FUNCTYPE_INT,
   FUNCTYPE_VOID,
   DECL_LOC,
-  DECL_GLOB
+  DECL_GLOB,
+  PARA_VAR,
+  PARA_ARR_SIN,
+  PARA_ARR_MUL
 }Kind;
 
 extern int ScopeLevel;

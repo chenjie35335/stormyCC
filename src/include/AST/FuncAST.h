@@ -33,11 +33,19 @@ public:
          << "entry:" << endl;
     for (auto const &pair : child->VarTable)
     {
-      cout << "  @" + pair.first << "_" << to_string(dep) << " = "
+      if(pair.second == 0){
+        cout << "  @" + pair.first << "_" << to_string(dep) << " = "
            << "alloc i32" << endl;
-      cout << "  store "
+        cout << "  store "
            << "%" + pair.first << "_" << to_string(dep) << ", "
            << "@" + pair.first << "_" << to_string(dep) << endl;
+      } else {
+        cout << "  @" + pair.first << "_" << to_string(dep) << " = "
+           << "alloc *i32" << endl;
+        cout << "  store "
+           << "%" + pair.first << "_" << to_string(dep) << ", "
+           << "@" + pair.first << "_" << to_string(dep) << endl;
+      } 
     }
     block->Dump();
     if (ret_type == FUNCTYPE_VOID)
@@ -80,12 +88,54 @@ class SinFuncFParamAST : public BaseAST
 public:
   std::string ident;
   std::unique_ptr<BaseAST> ParaType;
+  std::unique_ptr<BaseAST> Dimen;
+  int type;
   void Dump() const override
   {
-    cout << "%" << ident << "_" << to_string(ScopeLevel) << ": ";
-    cout << "i32";
-    auto &VarTable = IdentTable->VarTable;
-    VarTable.insert(pair<string, int>(ident, 0));
+    switch(type){
+      case PARA_VAR:{
+        cout << "%" << ident << "_" << to_string(ScopeLevel) << ": ";
+        cout << "i32";
+        auto &VarTable = IdentTable->VarTable;
+        VarTable.insert(pair<string, int>(ident, 0));
+        break;
+      } 
+      case PARA_ARR_SIN:{
+        cout << "%" << ident << "_" << to_string(ScopeLevel) << ": ";
+        cout<< "*i32";
+        auto &VarTable = IdentTable->VarTable;
+        VarTable.insert(pair<string, int>(ident, -1));
+        break;
+      }
+      case PARA_ARR_MUL:{
+        cout << "%" << ident << "_" << to_string(ScopeLevel) << ": ";
+        cout<< "*";
+        string res,sign;
+        vector<string> Para;
+        Dimen->Dump(sign,Para);
+        //cout<<sign;
+         for(auto it = Para.rbegin(); it < Para.rend(); ++it){
+          if(it == Para.rbegin()){
+            res.append("[");
+            res.append("i32");
+            res.append(", ");
+            res.append(*it);
+            res.append("]");
+          } else {
+            res.insert(0,"[");
+            res.append(", ");
+            res.append(*it);
+            res.append("]");
+          }
+        }
+        cout<<res;
+        auto &VarTable = IdentTable->VarTable;
+        VarTable.insert(pair<string, int>(ident, -2));
+        break;
+      }
+        break;
+    }
+    
   }
 };
 

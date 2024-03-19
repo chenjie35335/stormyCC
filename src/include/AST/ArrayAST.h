@@ -41,7 +41,6 @@ class ConstArrayDefAST : public BaseAST {
 };
 
 
-
 class ArrayDimenAST : public BaseAST {
   public:
     std::unique_ptr<BaseAST> constExp;
@@ -76,18 +75,13 @@ class ConstArrayVarAST : public BaseAST {
     int type;
     void Dump(string &sign, vector<string> &Para) const override{
         if(type ==0){
-          content->Dump(sign, Para);
-          sign = "";
+          //fill with zero
+          content->Dump(sign,Para);
           sign.insert(0,"{");
-        for(auto it = Para.begin(); it != Para.end();it++) {
-          sign.append(*it);
-          if(it != Para.end() - 1) {
-            sign.append(", ");
-          }
-        }
-        sign.append("}");
+          sign.append("}");
         } else {
-            sign.append("{0}");
+          sign = "";
+          sign.append("{0}");
         }
     }
 };
@@ -106,10 +100,11 @@ class ArrayContentAST : public BaseAST {
           string sign1 = "";
           for(auto it = Para.begin(); it != Para.end(); it++){
             sign1.append(*it);
-            if(it != Para.end()) {
+            if(it != Para.end() - 1) {
               sign1.append(", ");
             } 
           }
+          sign = sign1;
         } else if(type == 2){
           var->Dump(sign,Para);
         } 
@@ -127,7 +122,9 @@ class MulArrayContentAST : public BaseAST {
         Para.push_back(sign);
         mul->Dump(sign,Para);
       } else {
-        sin->Dump(sign,Para);
+        vector<string> Para1;
+        sin->Dump(sign,Para1);
+        Para.push_back(sign);
         mul->Dump(sign,Para);
       }
     }
@@ -156,6 +153,9 @@ class MulLValLAST : public BaseAST {
         cout<<"\t%"<<alloc_now<<" = "<<"load "<<s0<<endl;     
     }
 };
+
+//arra para
+
 
 
 

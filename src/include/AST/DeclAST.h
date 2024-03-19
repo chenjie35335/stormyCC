@@ -110,7 +110,10 @@ public:
         case SINVARDEFAST_UIN: {
           if(sign == DECL_GLOB) 
             cout << "global @"+ident+"_"+to_string(dep) <<" = " << "alloc i32," <<  " zeroinit" << endl;
-              break;
+          else {
+            cout << "  @"<<ident+"_"+to_string(dep) <<" = " << "alloc i32" << endl;
+          }
+          break;
         }
         case SINVARDEFAST_INI:
         {
