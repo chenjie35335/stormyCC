@@ -5,7 +5,7 @@ extern int selected_reg;
 //同时需要维护一个全局变量表示当前可分配的栈的位置（注意，由于我们这里使用的是面向过程的方式，所以这里用全局变量，过几天这里将全部改为面向对象）
 void backend(char *str,const char *output)
 {
-    koopa_program_t program = NULL;
+    koopa_program_t program;
     //printf("begin parse\n");
     koopa_error_code_t ret = koopa_parse_from_string(str,&program);
     //printf("end parse1\n");
@@ -21,10 +21,12 @@ void backend(char *str,const char *output)
     koopa_delete_raw_program_builder(builder);
 }
 //raw_integer
-void Visit(const koopa_raw_integer_t &integer,string &sign)
+void Visit_integer(const koopa_raw_integer_t &integer,const koopa_raw_value_t &value)
 {
     //printf("parse integer\n");
     //printf("  li a0, %d\n",integer.value);
+
+    string sign;
     if(integer.value == 0) {
         sign = regs[0];
     }
@@ -34,26 +36,35 @@ void Visit(const koopa_raw_integer_t &integer,string &sign)
         printf("  li   %s, %d\n",sign.c_str(),integer.value);
         //cout << "  li" + sign + "," + to_string(integer.value) << endl;
     }
+    reg_alloc.insert(pair<koopa_raw_value_t,string>(value,sign));
+}
+//raw_alloc
+void Visit_alloc(const koopa_raw_value_t &value)
+{
+    int offset = alloc_stack();
+    stack_alloc.insert(pair<koopa_raw_value_t,int>(value,offset));
 }
 //raw_return
-void Visit(const koopa_raw_return_t &ret,string &sign)
+void Visit_return(const koopa_raw_return_t &ret)
 {
-    Visit(ret.value,sign);
-    for(int i = 0; i < 32; i++) {
-        if(!sign.compare(regs[i]) && sign.compare("a0")) {
-            cout << "  mv   a0, " + sign << endl; break;
-        }
-    }
+    Visit_value(ret.value);
+    // for(int i = 0; i < 32; i++) {
+    //     if(!sign.compare(regs[i]) && sign.compare("a0")) {
+            cout << "  mv   a0, " + reg_alloc[ret.value] << endl; //break;
+            cout << "  addi sp, sp, 256" <<  endl;
+            cout << "  ret" << endl;
+    //     }
+    // }
 }
 //raw_binary
-void Visit(const koopa_raw_binary_t &binary,string &sign) {
+void Visit_binary(const koopa_raw_binary_t &binary,const koopa_raw_value_t &value) {
     //printf("begin parse binary\n");
     const auto & binary_op = binary.op;
-    string s1 = "a0", s2 = "a0";
-    Visit(binary.lhs,s1);
-    Visit(binary.rhs,s2);
+    Visit_value(binary.lhs);
+    Visit_value(binary.rhs);
+    string s1 = reg_alloc[binary.lhs], s2 = reg_alloc[binary.rhs];
+    string sign = alloc_reg();
     //cout << s1 << s2 <<endl;
-    sign = alloc_reg();
     switch(binary_op){
         case KOOPA_RBO_ADD: 
         //printf("parsing add\n");
@@ -110,113 +121,143 @@ void Visit(const koopa_raw_binary_t &binary,string &sign) {
         break;
         default:assert(false);
     }
-    cout << endl;
+    reg_alloc.insert(pair<koopa_raw_value_t,string>(value,sign));
 }
-
-void Visit(const koopa_raw_store_t &store,string &sign) {
-    string sign1,sign2;
-    Visit(store.value,sign1);
-    Visit(store.dest,sign2);
+//raw_store
+void Visit_store(const koopa_raw_store_t &store,const koopa_raw_value_t &value) {
+    Visit_value(store.value);
+    Visit_value(store.dest);
+    string sign1 = reg_alloc.at(store.value);
+    string sign2 = to_string(stack_alloc.at(store.dest))+"(sp)";
     cout << "  sw   " << sign1 << ", " <<sign2 <<endl;
 }
-
-void Visit(const koopa_raw_load_t &load,string &sign) {
-    Visit(load.src,sign);
+//raw_load
+void Visit_load(const koopa_raw_load_t &load,const koopa_raw_value_t &value) {
+    string sign = to_string(stack_alloc.at(load.src))+"(sp)";
     string sign1 = alloc_reg();
     cout << "  lw   " << sign1 << ", " <<sign <<endl;
     sign = sign1;
+    reg_alloc.insert(pair<koopa_raw_value_t,string>(value,sign));
+}
+void Vist_branch(const koopa_raw_branch_t &branch)
+{
+    // cout<<"Vist_branch"<<endl;
+    // cout<<"cond:{"<<reg_alloc[branch.cond]<<"}"<<endl;
+    // cout<<"true_bb:{"<<branch.true_bb->name+1<<"}"<<endl;
+    // cout<<"false_bb:{"<<branch.false_bb->name+1<<"}"<<endl;
+    Visit_value(branch.cond);
+    cout<<"  bnez "<<reg_alloc[branch.cond]<<", "<<branch.true_bb->name+1<<endl;
+    cout<<"  j "<<branch.false_bb->name+1<<endl;
+}
+void Visit_jump(const  koopa_raw_jump_t &jump)
+{
+    // cout<<"Visit_jump"<<endl;
+    // cout<<"Jump_target:{"<<jump.target->name+1<<"}\n"<<endl;
+    cout<<"  j "<<jump.target->name+1<<endl;
 }
 //现在不清楚的是这里是图还是树，
 //现在是想办法建立树节点与分配的寄存器之间的关系，从而实现剪枝，避免多余
 //这里将寄存器分配和这个koopa_raw_value_t绑定在一起试试
 //raw_value
-void Visit(const koopa_raw_value_t &value,string &sign) {
-    //printf("value = %s\n",value->name);
-    if(reg_alloc.find(value) != reg_alloc.end()) {
-        sign = reg_alloc.at(value);
+void Visit_value(const koopa_raw_value_t &value) {
+    // printf("value = %s\n",value->name);
+    // if(reg_alloc.find(value) != reg_alloc.end()) {
+    //     sign = reg_alloc.at(value);
+    //     return;
+    // }
+    // else if(stack_alloc.find(value) != stack_alloc.end()){
+    //     sign = to_string(stack_alloc.at(value))+"(sp)";
+    //     return;
+    // }
+    // else{
+    if(reg_alloc.find(value) != reg_alloc.end())
+        return ;
+    if(stack_alloc.find(value) != stack_alloc.end())
         return;
-    }
-    else if(stack_alloc.find(value) != stack_alloc.end()){
-        sign = to_string(stack_alloc.at(value))+"(sp)";
-        return;
-    }
-    else{
     const auto& kind = value->kind;
     switch(kind.tag) {
         case KOOPA_RVT_RETURN: {
-            //printf("parse return\n");
-            Visit(kind.data.ret,sign);
-            cout << "  addi sp, sp, 256" <<  endl;
-            cout << "  ret" << endl;
+            // printf("parse return\n");
+            Visit_return(kind.data.ret);
             break;
         }
         case KOOPA_RVT_INTEGER: {
-            //printf("parse integer\n");
-            Visit(kind.data.integer,sign);
-            reg_alloc.insert(pair<koopa_raw_value_t,string>(value,sign));
+            // printf("parse integer\n");
+            Visit_integer(kind.data.integer,value);
             break;
         }
         case KOOPA_RVT_BINARY: {
             //printf("parse binary\n");
-            Visit(kind.data.binary,sign);
-            reg_alloc.insert(pair<koopa_raw_value_t,string>(value,sign));
+            Visit_binary(kind.data.binary,value);
             break;
         }
         case KOOPA_RVT_ALLOC: {
             //printf("parse alloc\n");
-            int offset = alloc_stack();
-            stack_alloc.insert(pair<koopa_raw_value_t,int>(value,offset));
+            Visit_alloc(value);
             break;
         }
         case KOOPA_RVT_LOAD: {
             //printf("parse load\n");
-            Visit(kind.data.load,sign);
-            reg_alloc.insert(pair<koopa_raw_value_t,string>(value,sign));
+            Visit_load(kind.data.load,value);
             break;
         }
         case KOOPA_RVT_STORE: {
             //printf("parse store\n");
-            Visit(kind.data.store,sign);
+            Visit_store(kind.data.store,value);
+            break;
+        }
+        case KOOPA_RVT_BRANCH:{
+            // cout<<"parse branch"<<endl;
+            Vist_branch(kind.data.branch);
+            break;
+        }
+        case KOOPA_RVT_JUMP:{
+            // cout<<"parse jump"<<endl;
+            Visit_jump(kind.data.jump);
             break;
         }
         default:
             assert(false);
     }
-    }
 } 
 //raw_basic_block
-void Visit(const koopa_raw_basic_block_t &bb,string &sign){
-    Visit(bb->insts,sign);
+void Visit_bbs(const koopa_raw_basic_block_t &bb){
+    //basic_block_name
+    cout<<endl;
+    cout<<bb->name+1<<":"<<endl;
+    // printf("%s:\n",bb->name+1);
+    Visit_slice(bb->insts);
 } 
 //raw_function
 //这里先只做一个map,如果之后使用多函数，可能会使用map来存储（后话暂且不说）
-void Visit(const koopa_raw_function_t &func,string &sign)
+void Visit_function(const koopa_raw_function_t &func)
 {
         printf("  .globl %s\n",func->name+1);
         printf("%s:\n",func->name+1);
         cout << "  addi sp, sp, -256" <<  endl;
         stack_offset = 0;
-        Visit(func->bbs,sign);
+        Visit_slice(func->bbs);
        
 }
 //这里我没有遍历所有的，是因为如果遍历会出现重复打印，可能之后还会修改
-void Visit(const koopa_raw_slice_t &slice,string &sign){
+void Visit_slice(const koopa_raw_slice_t &slice){
     for(size_t i = 0; i < slice.len; i++) {
         //cout << endl;
-        //printf("slice.len == %d, i == %d\n",slice.len,i);
+        // printf("slice.len == %d, i == %d\n",slice.len,i);
         //auto ptr = slice.buffer[slice.len-1];
         auto ptr = slice.buffer[i];
         switch(slice.kind) {
             case KOOPA_RSIK_FUNCTION:
                 //printf("begin parse function\n");
-                Visit(reinterpret_cast<koopa_raw_function_t>(ptr),sign);
+                Visit_function(reinterpret_cast<koopa_raw_function_t>(ptr));
                 break;
             case KOOPA_RSIK_BASIC_BLOCK:
-                //printf("begin parse block\n");
-                Visit(reinterpret_cast<koopa_raw_basic_block_t>(ptr),sign);break;
+                // printf("begin parse block\n");
+                // cout<<"slice.len =="<<slice.len<<", i == "<<i<<endl;
+                Visit_bbs(reinterpret_cast<koopa_raw_basic_block_t>(ptr));break;
             case KOOPA_RSIK_VALUE:
                 //printf("begin parse value\n");
-                Visit(reinterpret_cast<koopa_raw_value_t>(ptr),sign);break;
+                Visit_value(reinterpret_cast<koopa_raw_value_t>(ptr));break;
             default:
                 assert(false);
         }
@@ -225,11 +266,9 @@ void Visit(const koopa_raw_slice_t &slice,string &sign){
 
 void generateASM(const koopa_raw_program_t &program)
 {
-    char *c = "si";
-    string sign(c);
     selected_reg = 0;
     printf("  .text\n");
-    Visit(program.funcs,sign);
+    Visit_slice(program.funcs);
 }
 
 
