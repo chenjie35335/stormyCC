@@ -183,7 +183,6 @@ public:
 
       for (auto it = Para.rbegin(); it < Para.rend(); ++it)
       {
-        // cout<<"520";
         if (it == Para.rbegin())
         {
           res.append("[");

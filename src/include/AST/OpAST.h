@@ -23,6 +23,9 @@ class RelOpAST : public BaseAST {
         }
         sign = "%"+to_string(alloc_now);
     }
+    [[nodiscard]] int calc() const override{
+        return type;
+    }
 } 
 ;
 //单目运算符
