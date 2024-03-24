@@ -46,6 +46,7 @@ enum{
   SINVARDEFAST_INI,
   SINVARDEFAST_INI_ARR,
   SINVARDEFAST_UNI_ARR,
+  SINVARDEFAST_ASSIGNMENT,
   SINVARDEFAST_FUNC,
   STMTAST_RET,
   STMTAST_LVA,
@@ -81,6 +82,7 @@ enum{
 extern int ScopeLevel;
 extern IdentTableNode* IdentTable;
 extern FuncTable funcTable;
+extern ArrayTable arrayTable;
 extern int end_br[100];
 //extern unordered_map<string,int> ValueTable;
 //extern unordered_map<string,int> VarTable;
@@ -96,6 +98,8 @@ static int ret_func = 0;
 static int func_call_cnt = 0;
 static int is_lva = 0;
 static int rank_name = 0;
+static int arr_seq_cnt = 0;
+static int arr_dep = 0;
 class BaseAST {
  public:
   virtual ~BaseAST() = default;
@@ -113,15 +117,15 @@ class CompUnitAST : public BaseAST {
   // 用智能指针管理对象
   std::unique_ptr<BaseAST> multCompUnit;
   void Dump() const override {
-    // printf("decl @getint(): i32\n");
-    // printf("decl @getch(): i32\n");
-    // printf("decl @getarray(*i32): i32\n");
-    // printf("decl @putint(i32)\n");
-    // printf("decl @putch(i32)\n");
-    // printf("decl @putarray(i32, *i32)\n");
-    // printf("decl @starttime()\n");
-    // printf("decl @stoptime()\n");
-    // cout<<endl;
+    printf("decl @getint(): i32\n");
+    printf("decl @getch(): i32\n");
+    printf("decl @getarray(*i32): i32\n");
+    printf("decl @putint(i32)\n");
+    printf("decl @putch(i32)\n");
+    printf("decl @putarray(i32, *i32)\n");
+    printf("decl @starttime()\n");
+    printf("decl @stoptime()\n");
+    cout<<endl;
     //cout << "enter CompUnit" << endl;
     IdentTable = new IdentTableNode();
     ScopeLevel = 0;
@@ -141,7 +145,6 @@ class MultCompUnitAST : public BaseAST {
   vector<unique_ptr<BaseAST>> sinCompUnit;
   void Dump() const override {
     for(auto &sinComp : sinCompUnit) {
-      //cout << "enter MultiCompUnit" << endl;
       sinComp->Dump();
     }
   }

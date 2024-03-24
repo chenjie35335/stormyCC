@@ -9,9 +9,11 @@ class LValLAST : public BaseAST {
       if(type == 0)
       sign = ident;
       else {
-        array->Dump();
+        //cout<<"666";
+        array->Dump(sign);
       }
     }
+    [[nodiscard]] int calc() const override {return array->calc();}
 };
 
 class LValRAST : public BaseAST {
@@ -21,8 +23,21 @@ class LValRAST : public BaseAST {
     int type;
     void Dump() const override {}
     void Dump(string &sign) const override {
+      int dep = IdentTable->level;
+      //cout<<"666";
+      vector<string> Para;
+      string s0 = "@";
+      s0.append(ident);
+      s0.append("_"+to_string(dep));
       if(type == 1){
-        array->Dump(sign);
+        array->Dump(sign,Para);
+        for(auto it = Para.begin(); it !=Para.end() ; it++){
+          cout<<"\t%ptr_"<<alloc_now <<" = getelemptr "<< s0;
+          cout<<", "<<*it<<endl;
+          s0 = "%ptr_";
+          s0.append(to_string(alloc_now));
+          alloc_now++;
+        }
         return;
       }
       auto p = IdentTable;

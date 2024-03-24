@@ -32,7 +32,15 @@ class StmtAST : public BaseAST {
             string sign1,sign2;
             //cout<<"hello world"<<endl;
             Lval->Dump(sign1);
+            //cout<<"222";
             Exp->Dump(sign2);
+            //cout<<"333";
+            if(Lval->calc() == 38){
+              cout<<"  store "<<sign2 <<", "<<"%ptr_"<<alloc_now - 2<<endl;
+              //cout<<"666";
+              break;
+            } 
+            cout<<"777";
             int value = Exp->calc();
             //scope bianli
             while(p != nullptr) {
@@ -69,8 +77,8 @@ class StmtAST : public BaseAST {
         case STMTAST_WHILE: WhileHead->Dump(); break;
         case STMTAST_INWHILE: InWhileStmt->Dump(); break;
         
-          default:
-              assert(0);
+        default:
+            assert(0);
       } 
     }  
     }

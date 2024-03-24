@@ -23,9 +23,6 @@ class RelOpAST : public BaseAST {
         }
         sign = "%"+to_string(alloc_now);
     }
-    [[nodiscard]] int calc() const override{
-        return type;
-    }
 } 
 ;
 //单目运算符
@@ -57,7 +54,9 @@ class AddOpAST : public BaseAST {
         alloc_now++;
         switch(op) {
           case '+' :
+            cout<<"222";
             cout << "  %" << (alloc_now) << ' '<< '=' << ' ' << "add " << sign1 << ", " << sign2 << endl;
+            cout<<"333";
             break;
           case '-' :
             cout << "  %" << (alloc_now) << ' '<< '=' << ' ' << "sub " << sign1 << ", " << sign2 << endl;

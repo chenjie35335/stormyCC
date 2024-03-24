@@ -239,7 +239,9 @@ class AddExpAST : public BaseAST {
             string sign2;
             AddExp->Dump(sign1);
             MulExp->Dump(sign2);
+            //cout<<"222";
             AddOp->Dump(sign1,sign2,sign);
+            //cout<<"333";
             break;
         }
         default:

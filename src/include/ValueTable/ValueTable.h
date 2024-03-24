@@ -23,6 +23,7 @@ class IdentTableNode {
         int level;
         unordered_map<string,int> ConstTable; //常量表
         unordered_map<string,int> VarTable;  //变量表
+        unordered_map<string,vector<int>> ArrTable;
         //构造函数 
         IdentTableNode() {
             father = nullptr;
@@ -50,3 +51,11 @@ class FuncTable{
     }
 };
 
+
+class ArrayTable{
+    public:
+    unordered_map<int, int> ArrTable;
+    unordered_map<int, int> ArrLevel;
+    string ident;
+    //unordered_map<string,vector<int>> ContentTable;
+};

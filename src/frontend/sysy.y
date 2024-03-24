@@ -235,8 +235,14 @@ SinConstDef
       auto ast      = new SinConstDefAST();
       ast->ident    = *unique_ptr<string>($1);
       ast->ConstExp = unique_ptr<BaseAST>($3);
+      ast->type = 0;
       $$            = ast;
-  } 
+  } | ConstArrayDef {
+    auto ast = new SinConstDefAST();
+    ast->def = unique_ptr<BaseAST>($1);
+    ast->type = 1;
+    $$ = ast;
+  }
   ;
 
 ConstArrayDef
@@ -250,7 +256,7 @@ ConstArrayDef
   ;
 
 ArrayDimen
-  : '[' Exp ']' {
+  : '[' ConstExp ']' {
     auto ast = new ArrayDimenAST();
     ast->constExp = unique_ptr<BaseAST>($2);
     ast->type = 0;
@@ -264,10 +270,33 @@ ArrayDimen
   ;
 
 MulArrayDimen 
-  : '[' Exp ']' ArrayDimen {
+  : '[' ConstExp ']' ArrayDimen {
     auto ast = new MulArrayDimenAST();
     ast->exp = unique_ptr<BaseAST>($2);
     ast->dim = unique_ptr<BaseAST>($4);
+    $$ = ast;
+  } 
+  ;
+
+ArrPara 
+  : '[' Exp ']' {
+    auto ast = new ArrParaAST();
+    ast->exp = unique_ptr<BaseAST>($2);
+    ast->type = 0;
+    $$ = ast;
+  } | MulArrPara {
+    auto ast = new ArrParaAST();
+    ast->exp = unique_ptr<BaseAST>($1);
+    ast->type = 1;
+    $$ = ast;
+  }
+  ;
+
+MulArrPara
+  : '[' Exp ']' ArrPara {
+    auto ast = new MulArrParaAST();
+    ast->exp = unique_ptr<BaseAST>($2);
+    ast->para = unique_ptr<BaseAST>($4);
     $$ = ast;
   } 
   ;
@@ -366,6 +395,12 @@ SinVarDef
     ast->dimen = unique_ptr<BaseAST>($2);
     ast->ConstInit = unique_ptr<BaseAST>($4);
     $$ = ast;
+  } | IDENT ArrayDimen '=' Number {
+    auto ast = new SinVarDefAST();
+    ast->ident = *unique_ptr<string>($1);
+    ast->dimen = unique_ptr<BaseAST>($2);
+    ast->type = SINVARDEFAST_ASSIGNMENT;
+    ast->number = $4;
   }
   ;
 
@@ -706,7 +741,7 @@ LValL
   ;
 
 MulLValL 
-  : IDENT ArrayDimen {
+  : IDENT ArrPara {
       auto ast = new MulLValLAST();
       ast->ident = *unique_ptr<string>($1);
       ast->exp = unique_ptr<BaseAST>($2);
@@ -722,9 +757,10 @@ LValR
     ast->ident = *unique_ptr<string>($1);
     ast->type = 0;
     $$ = ast;
-  } | MulLValL {
+  } | IDENT ArrPara {
     auto ast = new LValRAST();
-    ast->array = unique_ptr<BaseAST>($1);
+    ast->ident = *unique_ptr<string>($1);
+    ast->array = unique_ptr<BaseAST>($2);
     ast->type = 1;
     $$ = ast;
   }
