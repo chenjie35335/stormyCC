@@ -20,6 +20,35 @@ void backend(char *str,const char *output)
     generateASM(raw);
     koopa_delete_raw_program_builder(builder);
 }
+int Cal_Stack_Size(const koopa_raw_function_t &func,bool &has_call)
+{
+    int S = 0;
+    int R = 0;
+    int A = 0;
+    for (size_t i = 0; i < func->bbs.len; ++i) {
+        assert(func->bbs.kind == KOOPA_RSIK_BASIC_BLOCK);
+        koopa_raw_basic_block_t bb = (koopa_raw_basic_block_t) func->bbs.buffer[i];
+        for(size_t j = 0; j < bb->insts.len; ++j){
+            assert(bb->insts.kind == KOOPA_RSIK_VALUE);
+            const koopa_raw_value_t value = (koopa_raw_value_t) bb->insts.buffer[j];
+            if(value->kind.tag == KOOPA_RVT_ALLOC){//alloc 指令分配的内存,大小为4字节
+                S += 4;
+            }
+            else if(value->ty->tag != KOOPA_RTT_UNIT){//指令的类型不为unit, 存在返回值，分配内存
+                S += 4;
+            }
+
+            if(value->kind.tag == KOOPA_RVT_CALL){
+                R = 4;
+                has_call = true;
+                // cout<<"name{"<<value->kind.data.call.callee->name<<"}"<<endl;
+                //cout<<"len_args:"<<value->kind.data.call.args.len<<endl;
+                A = max(A,int(value->kind.data.call.args.len-8))*4;
+            }
+        }
+    }
+    return R+S+A;
+}
 //raw_integer
 void Visit_integer(const koopa_raw_integer_t &integer,const koopa_raw_value_t &value)
 {
@@ -38,6 +67,10 @@ void Visit_integer(const koopa_raw_integer_t &integer,const koopa_raw_value_t &v
     }
     reg_alloc.insert(pair<koopa_raw_value_t,string>(value,sign));
 }
+void Visit_func_arg_ref(const koopa_raw_func_arg_ref_t &func_arg_ref,const koopa_raw_value_t &value){
+    reg_alloc.insert(pair<koopa_raw_value_t,string>(value,regs[10+func_arg_ref.index]));
+    reg_used[func_arg_ref.index] = true;
+}
 //raw_alloc
 void Visit_alloc(const koopa_raw_value_t &value)
 {
@@ -47,14 +80,20 @@ void Visit_alloc(const koopa_raw_value_t &value)
 //raw_return
 void Visit_return(const koopa_raw_return_t &ret)
 {
-    Visit_value(ret.value);
-    // for(int i = 0; i < 32; i++) {
-    //     if(!sign.compare(regs[i]) && sign.compare("a0")) {
+    if(ret.value != NULL){
+        Visit_value(ret.value);
+        if (reg_alloc.count(ret.value) > 0 )
             cout << "  mv   a0, " + reg_alloc[ret.value] << endl; //break;
-            cout << "  addi sp, sp, 256" <<  endl;
-            cout << "  ret" << endl;
-    //     }
-    // }
+        else
+            cout << "  lw   a0, " + to_string(stack_alloc.at(ret.value))+"(sp)" << endl; //break;
+    }
+
+    if (has_call)
+    {
+        cout<<"  lw ra, "<< Need_Size_RSA_16-4 << "(sp)"<<endl;
+    }
+    cout << "  addi sp, sp, "<< Need_Size_RSA_16 <<  endl;
+    cout << "  ret" << endl;
 }
 //raw_binary
 void Visit_binary(const koopa_raw_binary_t &binary,const koopa_raw_value_t &value) {
@@ -139,7 +178,7 @@ void Visit_load(const koopa_raw_load_t &load,const koopa_raw_value_t &value) {
     sign = sign1;
     reg_alloc.insert(pair<koopa_raw_value_t,string>(value,sign));
 }
-void Vist_branch(const koopa_raw_branch_t &branch)
+void Visit_branch(const koopa_raw_branch_t &branch)
 {
     // cout<<"Vist_branch"<<endl;
     // cout<<"cond:{"<<reg_alloc[branch.cond]<<"}"<<endl;
@@ -154,6 +193,24 @@ void Visit_jump(const  koopa_raw_jump_t &jump)
     // cout<<"Visit_jump"<<endl;
     // cout<<"Jump_target:{"<<jump.target->name+1<<"}\n"<<endl;
     cout<<"  j "<<jump.target->name+1<<endl;
+}
+void Visit_call(const koopa_raw_call_t &call,const koopa_raw_value_t &value)
+{
+    // 传递参数
+    for (size_t i = 0; i < call.args.len; i++)
+    {
+        koopa_raw_value_t arg_of_fun = koopa_raw_value_t(call.args.buffer[i]);
+        Visit_value(arg_of_fun);
+        cout<<"  mv a"<<i<<", "<<reg_alloc[arg_of_fun]<<endl;
+    }
+    
+
+
+    cout<<"  call "<<call.callee->name+1<<endl;
+    int offset = alloc_stack();
+    stack_alloc.insert(pair<koopa_raw_value_t,int>(value,offset));
+    if(call.args.len > 0)
+        cout<<"  sw a0, "<<to_string(stack_alloc.at(value))+"(sp)"<<endl;
 }
 //现在不清楚的是这里是图还是树，
 //现在是想办法建立树节点与分配的寄存器之间的关系，从而实现剪枝，避免多余
@@ -197,7 +254,7 @@ void Visit_value(const koopa_raw_value_t &value) {
             break;
         }
         case KOOPA_RVT_LOAD: {
-            //printf("parse load\n");
+            // printf("parse load\n");
             Visit_load(kind.data.load,value);
             break;
         }
@@ -208,7 +265,7 @@ void Visit_value(const koopa_raw_value_t &value) {
         }
         case KOOPA_RVT_BRANCH:{
             // cout<<"parse branch"<<endl;
-            Vist_branch(kind.data.branch);
+            Visit_branch(kind.data.branch);
             break;
         }
         case KOOPA_RVT_JUMP:{
@@ -216,15 +273,28 @@ void Visit_value(const koopa_raw_value_t &value) {
             Visit_jump(kind.data.jump);
             break;
         }
+        case KOOPA_RVT_CALL:{
+            // cout<<"parse call"<<endl;
+            Visit_call(kind.data.call,value);
+            break;
+        }
+        case KOOPA_RVT_FUNC_ARG_REF:{
+            // cout<<"parse func arg ref"<<endl;
+            Visit_func_arg_ref(kind.data.func_arg_ref,value);
+            break;
+        }
         default:
+            // cout<<kind.tag<<endl;
             assert(false);
     }
 } 
 //raw_basic_block
 void Visit_bbs(const koopa_raw_basic_block_t &bb){
     //basic_block_name
+    if(strcmp("entry",bb->name+1)){
     cout<<endl;
     cout<<bb->name+1<<":"<<endl;
+    }
     // printf("%s:\n",bb->name+1);
     Visit_slice(bb->insts);
 } 
@@ -232,11 +302,28 @@ void Visit_bbs(const koopa_raw_basic_block_t &bb){
 //这里先只做一个map,如果之后使用多函数，可能会使用map来存储（后话暂且不说）
 void Visit_function(const koopa_raw_function_t &func)
 {
+        printf("  .text\n");
         printf("  .globl %s\n",func->name+1);
         printf("%s:\n",func->name+1);
-        cout << "  addi sp, sp, -256" <<  endl;
+        has_call = false;
+        Need_Size_RSA_16 = ((Cal_Stack_Size(func,has_call)+15)/16)*16;//对齐到16
+        if ( -2048 > Need_Size_RSA_16 )//立即数超过范围
+        {
+            cout<<" li t0, -"<<Need_Size_RSA_16<<endl;
+            cout<<"add sp, sp, t0"<<endl;
+
+        }
+        else if(Need_Size_RSA_16 != 0){
+            cout << "  addi sp, sp, -"<< Need_Size_RSA_16 <<  endl;
+        }
+        if (has_call)//保存 ra 寄存器
+        {
+            cout << "  sw ra, "<< Need_Size_RSA_16-4 << "(sp)" << endl; 
+        }
         stack_offset = 0;
         Visit_slice(func->bbs);
+        Need_Size_RSA_16 = 0;
+        cout<<endl;
        
 }
 //这里我没有遍历所有的，是因为如果遍历会出现重复打印，可能之后还会修改
@@ -256,7 +343,7 @@ void Visit_slice(const koopa_raw_slice_t &slice){
                 // cout<<"slice.len =="<<slice.len<<", i == "<<i<<endl;
                 Visit_bbs(reinterpret_cast<koopa_raw_basic_block_t>(ptr));break;
             case KOOPA_RSIK_VALUE:
-                //printf("begin parse value\n");
+                // printf("begin parse value\n");
                 Visit_value(reinterpret_cast<koopa_raw_value_t>(ptr));break;
             default:
                 assert(false);
@@ -267,22 +354,6 @@ void Visit_slice(const koopa_raw_slice_t &slice){
 void generateASM(const koopa_raw_program_t &program)
 {
     selected_reg = 0;
-    printf("  .text\n");
     Visit_slice(program.funcs);
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

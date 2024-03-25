@@ -1,14 +1,17 @@
 #include "common.h"
 #include <unordered_map>
 #pragma once
+int Cal_Stack_Size(const koopa_raw_function_t &func,bool &has_call);
 
 void Visit_integer(const koopa_raw_integer_t &integer,const koopa_raw_value_t &value);
 void Visit_alloc(const koopa_raw_value_t &value);
+void Visit_func_arg_ref(const koopa_raw_func_arg_ref_t &func_arg_ref,const koopa_raw_value_t &value);
 void Visit_store(const koopa_raw_store_t &store,const koopa_raw_value_t &value);
 void Visit_load(const koopa_raw_load_t &load,const koopa_raw_value_t &value);
 void Visit_binary(const koopa_raw_binary_t &binary,const koopa_raw_value_t &value);
-void Vist_branch(const koopa_raw_branch_t &branch);
-void Vist_jump(const  koopa_raw_jump_t &jump);
+void Visit_branch(const koopa_raw_branch_t &branch);
+void Visit_jump(const  koopa_raw_jump_t &jump);
+void Visit_call(const koopa_raw_call_t &call,const koopa_raw_value_t &value);
 void Visit_return(const koopa_raw_return_t &ret);
 void Visit_value(const koopa_raw_value_t &value);
 void Visit_bbs(const koopa_raw_basic_block_t &bb);
@@ -17,6 +20,8 @@ void Visit_slice(const koopa_raw_slice_t &slice);
 void generateASM(const koopa_raw_program_t &program);
 unordered_map <koopa_raw_value_t,int> stack_alloc;
 unordered_map <koopa_raw_value_t,string> reg_alloc;
+bool has_call = false;
+static int Need_Size_RSA_16 = 0;
 static int selected_reg = 0;
 static int stack_offset = 0;
 const char *regs[] = {
