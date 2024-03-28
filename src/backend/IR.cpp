@@ -20,6 +20,7 @@ void backend(char *str,const char *output)
     generateASM(raw);
     koopa_delete_raw_program_builder(builder);
 }
+//计算函数所需要的栈空间大小
 int Cal_Stack_Size(const koopa_raw_function_t &func,bool &has_call)
 {
     int S = 0;
